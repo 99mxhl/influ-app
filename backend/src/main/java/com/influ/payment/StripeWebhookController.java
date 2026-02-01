@@ -7,6 +7,7 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/webhooks")
 @RequiredArgsConstructor
 public class StripeWebhookController {
+
+    private static final String EVENT_PAYMENT_INTENT_SUCCEEDED = "payment_intent.succeeded";
+    private static final String EVENT_PAYMENT_INTENT_FAILED = "payment_intent.payment_failed";
 
     private final StripeConfig stripeConfig;
     private final StripeEventRepository stripeEventRepository;
@@ -34,18 +38,16 @@ public class StripeWebhookController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid signature");
         }
 
-        // Idempotency check
-        if (stripeEventRepository.existsByEventId(event.getId())) {
+        // Idempotency: Save event first to prevent race condition (unique constraint on event_id)
+        try {
+            stripeEventRepository.save(new StripeEvent(event.getId(), event.getType()));
+        } catch (DataIntegrityViolationException e) {
             log.info("Duplicate event received: {}", event.getId());
             return ResponseEntity.ok("Event already processed");
         }
 
         try {
             handleEvent(event);
-
-            // Record processed event
-            stripeEventRepository.save(new StripeEvent(event.getId(), event.getType()));
-
             return ResponseEntity.ok("Event processed");
 
         } catch (Exception e) {
@@ -56,15 +58,15 @@ public class StripeWebhookController {
 
     private void handleEvent(Event event) {
         switch (event.getType()) {
-            case "payment_intent.succeeded" -> {
+            case EVENT_PAYMENT_INTENT_SUCCEEDED -> {
                 PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
                         .getObject().orElse(null);
                 if (paymentIntent != null) {
                     log.info("Payment succeeded: {}", paymentIntent.getId());
-                    paymentService.handlePaymentIntentSucceeded(paymentIntent.getId());
+                    paymentService.handlePaymentIntentSucceededInternal(paymentIntent.getId());
                 }
             }
-            case "payment_intent.payment_failed" -> {
+            case EVENT_PAYMENT_INTENT_FAILED -> {
                 PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
                         .getObject().orElse(null);
                 if (paymentIntent != null) {

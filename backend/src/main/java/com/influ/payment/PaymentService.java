@@ -115,7 +115,8 @@ public class PaymentService {
         BigDecimal amount = deal.getAgreedAmount();
         BigDecimal platformFee = amount.multiply(stripeConfig.getPlatformFeePercent())
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal influencerPayout = amount.subtract(platformFee);
+        BigDecimal influencerPayout = amount.subtract(platformFee)
+                .setScale(2, RoundingMode.HALF_UP);
 
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
@@ -189,8 +190,11 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse releasePayment(User client, UUID dealId) {
-        Deal deal = dealRepository.findByIdWithDetails(dealId)
-                .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", dealId));
+        // Use pessimistic lock to prevent concurrent release attempts
+        Payment payment = paymentRepository.findByDealIdForUpdate(dealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", "dealId", dealId));
+
+        Deal deal = payment.getDeal();
 
         if (!deal.getClient().getId().equals(client.getId())) {
             throw new AccessDeniedException("Only the client can release payment");
@@ -199,9 +203,6 @@ public class PaymentService {
         if (deal.getStatus() != DealStatus.COMPLETED) {
             throw new BusinessRuleViolationException("Deal must be completed before releasing payment");
         }
-
-        Payment payment = paymentRepository.findByDealId(dealId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment", "dealId", dealId));
 
         if (payment.getStatus() != PaymentStatus.ESCROW_HELD) {
             throw new BusinessRuleViolationException("Payment is not in escrow");
@@ -252,12 +253,39 @@ public class PaymentService {
         return paymentMapper.toPaymentResponse(payment);
     }
 
+    /**
+     * Internal method called by webhook after Stripe signature verification.
+     * Skips user authorization since the webhook has already been verified.
+     */
     @Transactional
-    public void handlePaymentIntentSucceeded(String paymentIntentId) {
+    public void handlePaymentIntentSucceededInternal(String paymentIntentId) {
         Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId).orElse(null);
         if (payment != null && payment.getStatus() == PaymentStatus.PENDING) {
-            // Internal call from webhook - use deal's client for authorization
-            capturePayment(payment.getDeal().getClient(), payment.getDeal().getId());
+            capturePaymentInternal(payment);
+        }
+    }
+
+    /**
+     * Internal capture method that skips authorization.
+     * Only called from verified webhook handlers.
+     */
+    private void capturePaymentInternal(Payment payment) {
+        try {
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(payment.getStripePaymentIntentId());
+            paymentIntent.capture();
+
+            payment.setStatus(PaymentStatus.ESCROW_HELD);
+            paymentRepository.save(payment);
+
+            dealService.activateDeal(payment.getDeal().getId());
+
+            log.info("Payment captured internally for deal {}", payment.getDeal().getId());
+
+        } catch (StripeException e) {
+            log.error("Failed to capture payment internally", e);
+            payment.setStatus(PaymentStatus.FAILED);
+            payment.setFailureReason(e.getMessage());
+            paymentRepository.save(payment);
         }
     }
 
