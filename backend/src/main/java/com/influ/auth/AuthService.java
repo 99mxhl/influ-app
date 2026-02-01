@@ -34,13 +34,14 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessRuleViolationException("Registration failed. Please check your information and try again.");
-        }
-
+        // Validate password byte length FIRST to prevent timing attacks on email existence
         // BCrypt truncates at 72 bytes - validate byte length for Unicode passwords
         if (request.getPassword().getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
             throw new BusinessRuleViolationException("Password exceeds maximum byte length");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessRuleViolationException("Registration failed. Please check your information and try again.");
         }
 
         User user = new User();
