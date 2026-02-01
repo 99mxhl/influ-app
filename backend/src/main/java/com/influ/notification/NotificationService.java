@@ -1,7 +1,7 @@
 package com.influ.notification;
 
 import com.influ.common.exception.ResourceNotFoundException;
-import com.influ.common.exception.UnauthorizedException;
+import org.springframework.security.access.AccessDeniedException;
 import com.influ.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,11 +31,11 @@ public class NotificationService {
 
     @Transactional
     public void markAsRead(User user, UUID notificationId) {
-        Notification notification = notificationRepository.findByIdForUpdate(notificationId)
+        Notification notification = notificationRepository.findByIdActive(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));
 
         if (!notification.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedException("You don't have access to this notification");
+            throw new AccessDeniedException("You don't have access to this notification");
         }
 
         notification.markAsRead();

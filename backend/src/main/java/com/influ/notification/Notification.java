@@ -3,6 +3,7 @@ package com.influ.notification;
 import com.influ.common.entity.BaseEntity;
 import com.influ.user.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,12 +28,15 @@ public class Notification extends BaseEntity {
     @Column(nullable = false)
     private NotificationType type;
 
+    @Size(max = 255, message = "Title must not exceed 255 characters")
     @Column(nullable = false)
     private String title;
 
+    @Size(max = 10000, message = "Description must not exceed 10000 characters")
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Size(max = 500, message = "Action URL must not exceed 500 characters")
     @Column(name = "action_url")
     private String actionUrl;
 
