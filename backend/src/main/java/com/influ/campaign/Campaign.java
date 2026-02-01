@@ -47,12 +47,12 @@ public class Campaign extends BaseEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "campaign_categories", joinColumns = @JoinColumn(name = "campaign_id"))
     @Column(name = "category")
     private List<String> categories = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "campaign_platforms", joinColumns = @JoinColumn(name = "campaign_id"))
     @Column(name = "platform")

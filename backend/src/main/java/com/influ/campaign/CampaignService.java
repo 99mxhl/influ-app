@@ -23,6 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CampaignService {
 
+    private static final java.util.regex.Pattern CATEGORY_PATTERN =
+            java.util.regex.Pattern.compile("^[a-zA-Z0-9\\s&-]{1,50}$");
+
     private void validateBudgetAndDates(BigDecimal budgetMin, BigDecimal budgetMax,
                                         LocalDate startDate, LocalDate endDate) {
         if (budgetMin != null && budgetMax != null && budgetMin.compareTo(budgetMax) > 0) {
@@ -30,6 +33,17 @@ public class CampaignService {
         }
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new BusinessRuleViolationException("Start date cannot be after end date");
+        }
+    }
+
+    private void validateCategories(java.util.List<String> categories) {
+        if (categories != null) {
+            for (String category : categories) {
+                if (category == null || !CATEGORY_PATTERN.matcher(category).matches()) {
+                    throw new BusinessRuleViolationException(
+                            "Invalid category: must be 1-50 alphanumeric characters, spaces, & or -");
+                }
+            }
         }
     }
 
@@ -44,6 +58,7 @@ public class CampaignService {
 
         validateBudgetAndDates(request.getBudgetMin(), request.getBudgetMax(),
                 request.getStartDate(), request.getEndDate());
+        validateCategories(request.getCategories());
 
         Campaign campaign = new Campaign();
         campaign.setClient(client);
@@ -71,9 +86,16 @@ public class CampaignService {
     }
 
     @Transactional(readOnly = true)
-    public CampaignResponse getCampaignById(UUID id) {
+    public CampaignResponse getCampaignById(User user, UUID id) {
         Campaign campaign = campaignRepository.findByIdWithClient(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Campaign", "id", id));
+
+        // Allow access if campaign is ACTIVE or user is the owner
+        if (campaign.getStatus() != CampaignStatus.ACTIVE &&
+                !campaign.getClient().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You don't have access to this campaign");
+        }
+
         return campaignMapper.toCampaignResponse(campaign);
     }
 
@@ -92,8 +114,12 @@ public class CampaignService {
         LocalDate newStartDate = request.getStartDate() != null ? request.getStartDate() : campaign.getStartDate();
         LocalDate newEndDate = request.getEndDate() != null ? request.getEndDate() : campaign.getEndDate();
         validateBudgetAndDates(newBudgetMin, newBudgetMax, newStartDate, newEndDate);
+        validateCategories(request.getCategories());
 
         if (request.getTitle() != null) {
+            if (request.getTitle().isBlank()) {
+                throw new BusinessRuleViolationException("Title cannot be blank");
+            }
             campaign.setTitle(request.getTitle());
         }
         if (request.getDescription() != null) {

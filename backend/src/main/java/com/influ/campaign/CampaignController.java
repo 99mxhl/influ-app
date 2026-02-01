@@ -54,8 +54,10 @@ public class CampaignController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get campaign by ID")
-    public ApiResponse<CampaignResponse> getCampaignById(@PathVariable UUID id) {
-        return ApiResponse.success(campaignService.getCampaignById(id));
+    public ApiResponse<CampaignResponse> getCampaignById(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID id) {
+        return ApiResponse.success(campaignService.getCampaignById(user, id));
     }
 
     @PutMapping("/{id}")

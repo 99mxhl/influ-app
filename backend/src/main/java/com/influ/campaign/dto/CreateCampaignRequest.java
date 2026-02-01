@@ -2,8 +2,10 @@ package com.influ.campaign.dto;
 
 import com.influ.campaign.CampaignStatus;
 import com.influ.campaign.Platform;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
