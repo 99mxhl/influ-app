@@ -1,13 +1,50 @@
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 
+import 'package:flutter/foundation.dart';
+
+/// API configuration with environment-based URL selection.
+///
+/// For production builds, set the API URL via --dart-define:
+/// ```
+/// flutter build apk --dart-define=API_BASE_URL=https://api.example.com
+/// flutter build ios --dart-define=API_BASE_URL=https://api.example.com
+/// ```
+///
+/// In debug mode, defaults to localhost (emulator-appropriate).
 class ApiConstants {
   ApiConstants._();
 
-  // Android emulator uses 10.0.2.2 to reach host machine
-  // iOS simulator and web can use localhost
+  /// Production API URL from environment, or null if not set.
+  static const String? _productionUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  ) == '' ? null : String.fromEnvironment('API_BASE_URL');
+
+  /// Returns the API base URL based on build mode and environment.
+  ///
+  /// - Release builds: Uses API_BASE_URL from --dart-define (required)
+  /// - Debug builds: Uses localhost appropriate for platform
+  ///
+  /// Throws [StateError] in release mode if API_BASE_URL is not configured.
   static String get baseUrl {
-    if (kIsWeb) return 'http://localhost:8080';
+    // In release mode, require production URL
+    if (kReleaseMode) {
+      if (_productionUrl == null || _productionUrl.isEmpty) {
+        throw StateError(
+          'API_BASE_URL must be set for release builds. '
+          'Use: flutter build --dart-define=API_BASE_URL=https://api.example.com',
+        );
+      }
+      // Enforce HTTPS in production
+      if (!_productionUrl.startsWith('https://')) {
+        throw StateError('API_BASE_URL must use HTTPS in production');
+      }
+      return _productionUrl;
+    }
+
+    // Debug mode: use localhost
+    // Android emulator uses 10.0.2.2 to reach host machine
+    // iOS simulator can use localhost
     if (Platform.isAndroid) return 'http://10.0.2.2:8080';
     return 'http://localhost:8080';
   }

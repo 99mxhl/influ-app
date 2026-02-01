@@ -17,6 +17,11 @@ class Validators {
     return null;
   }
 
+  /// Validates password meets security requirements:
+  /// - 8-72 characters (72 is BCrypt limit)
+  /// - At least one uppercase letter
+  /// - At least one lowercase letter
+  /// - At least one number
   static String? password(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required';
@@ -26,7 +31,35 @@ class Validators {
       return 'Password must be at least 8 characters';
     }
 
+    if (value.length > 72) {
+      return 'Password must not exceed 72 characters';
+    }
+
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'Password must contain at least one lowercase letter';
+    }
+
+    if (!value.contains(RegExp(r'\d'))) {
+      return 'Password must contain at least one number';
+    }
+
     return null;
+  }
+
+  /// Returns password strength info for UI display.
+  /// Returns a map with 'hasMinLength', 'hasUppercase', 'hasLowercase', 'hasNumber'.
+  static Map<String, bool> passwordStrength(String value) {
+    return {
+      'hasMinLength': value.length >= 8,
+      'hasMaxLength': value.length <= 72,
+      'hasUppercase': value.contains(RegExp(r'[A-Z]')),
+      'hasLowercase': value.contains(RegExp(r'[a-z]')),
+      'hasNumber': value.contains(RegExp(r'\d')),
+    };
   }
 
   static String? confirmPassword(String? value, String? password) {
