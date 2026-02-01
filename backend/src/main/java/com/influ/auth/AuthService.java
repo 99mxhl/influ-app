@@ -35,7 +35,7 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessRuleViolationException("Email is already registered");
+            throw new BusinessRuleViolationException("Registration failed. Please check your information and try again.");
         }
 
         // BCrypt truncates at 72 bytes - validate byte length for Unicode passwords
