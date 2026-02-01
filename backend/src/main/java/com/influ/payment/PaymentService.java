@@ -54,6 +54,9 @@ public class PaymentService {
             throw new BusinessRuleViolationException("Connect account already exists");
         }
 
+        String idempotencyKey = "connect_account_" + user.getId();
+        Account account = null;
+
         try {
             AccountCreateParams accountParams = AccountCreateParams.builder()
                     .setType(AccountCreateParams.Type.EXPRESS)
@@ -65,10 +68,9 @@ public class PaymentService {
                             .build())
                     .build();
 
-            Account account = Account.create(accountParams);
-
-            user.setStripeAccountId(account.getId());
-            userRepository.save(user);
+            account = Account.create(accountParams, com.stripe.net.RequestOptions.builder()
+                    .setIdempotencyKey(idempotencyKey)
+                    .build());
 
             AccountLinkCreateParams linkParams = AccountLinkCreateParams.builder()
                     .setAccount(account.getId())
@@ -78,6 +80,10 @@ public class PaymentService {
                     .build();
 
             AccountLink accountLink = AccountLink.create(linkParams);
+
+            // Only save user after all Stripe operations succeed
+            user.setStripeAccountId(account.getId());
+            userRepository.save(user);
 
             return ConnectAccountResponse.builder()
                     .accountId(account.getId())
@@ -112,15 +118,24 @@ public class PaymentService {
             throw new BusinessRuleViolationException("Payment already exists for this deal");
         }
 
+        // Re-verify deal state to prevent race conditions
+        Deal freshDeal = dealRepository.findByIdWithDetails(dealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", dealId));
+        if (freshDeal.getStatus() != DealStatus.TERMS_ACCEPTED) {
+            throw new BusinessRuleViolationException("Deal is no longer in a valid state for payment");
+        }
+
         BigDecimal amount = deal.getAgreedAmount();
         BigDecimal platformFee = amount.multiply(stripeConfig.getPlatformFeePercent())
                 .setScale(2, RoundingMode.HALF_UP);
         BigDecimal influencerPayout = amount.subtract(platformFee)
                 .setScale(2, RoundingMode.HALF_UP);
 
+        String idempotencyKey = "payment_intent_" + dealId + "_" + System.currentTimeMillis();
+
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount(amount.multiply(new BigDecimal("100")).longValue())
+                    .setAmount(amount.setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).longValue())
                     .setCurrency("usd")
                     .setAutomaticPaymentMethods(
                             PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
@@ -130,7 +145,9 @@ public class PaymentService {
                     .setCaptureMethod(PaymentIntentCreateParams.CaptureMethod.MANUAL)
                     .build();
 
-            PaymentIntent paymentIntent = PaymentIntent.create(params);
+            PaymentIntent paymentIntent = PaymentIntent.create(params, com.stripe.net.RequestOptions.builder()
+                    .setIdempotencyKey(idempotencyKey)
+                    .build());
 
             Payment payment = existingPayment != null ? existingPayment : new Payment();
             payment.setDeal(deal);
@@ -213,16 +230,21 @@ public class PaymentService {
             throw new BusinessRuleViolationException("Influencer has not set up payment account");
         }
 
+        String idempotencyKey = "transfer_" + payment.getId() + "_" + dealId;
+
         try {
             TransferCreateParams params = TransferCreateParams.builder()
-                    .setAmount(payment.getInfluencerPayout().multiply(new BigDecimal("100")).longValue())
+                    .setAmount(payment.getInfluencerPayout().setScale(2, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal("100")).longValue())
                     .setCurrency("usd")
                     .setDestination(influencer.getStripeAccountId())
                     .putMetadata("deal_id", dealId.toString())
                     .putMetadata("payment_id", payment.getId().toString())
                     .build();
 
-            Transfer transfer = Transfer.create(params);
+            Transfer transfer = Transfer.create(params, com.stripe.net.RequestOptions.builder()
+                    .setIdempotencyKey(idempotencyKey)
+                    .build());
 
             payment.setStatus(PaymentStatus.RELEASED);
             payment.setStripeTransferId(transfer.getId());
@@ -233,6 +255,9 @@ public class PaymentService {
 
         } catch (StripeException e) {
             log.error("Failed to release payment", e);
+            payment.setStatus(PaymentStatus.FAILED);
+            payment.setFailureReason("Transfer failed: " + e.getMessage());
+            paymentRepository.save(payment);
             throw new BusinessRuleViolationException("Failed to release payment: " + e.getMessage());
         }
     }
