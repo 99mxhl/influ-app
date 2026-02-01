@@ -18,10 +18,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private String generateCorrelationId() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
@@ -117,9 +122,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
-        log.error("Unexpected error", ex);
+        String correlationId = generateCorrelationId();
+        log.error("Unexpected error [correlationId={}]: {}", correlationId, ex.getMessage());
+        log.debug("Full stack trace for correlationId={}", correlationId, ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("INTERNAL_ERROR", "An unexpected error occurred"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "An unexpected error occurred. Reference: " + correlationId));
     }
 }

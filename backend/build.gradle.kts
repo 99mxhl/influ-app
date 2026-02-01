@@ -84,8 +84,8 @@ tasks.withType<Test> {
 }
 
 flyway {
-    url = "jdbc:postgresql://localhost:5432/influ"
-    user = "influ"
-    password = "influ"
+    url = System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5432/influ"
+    user = System.getenv("DATABASE_USERNAME") ?: "influ"
+    password = System.getenv("DATABASE_PASSWORD") ?: "influ"
     cleanDisabled = false
 }
