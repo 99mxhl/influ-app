@@ -17,7 +17,9 @@ public interface DealRepository extends JpaRepository<Deal, UUID> {
         LEFT JOIN FETCH i.profile
         JOIN FETCH d.client c
         LEFT JOIN FETCH c.profile
-        LEFT JOIN FETCH d.termsList
+        LEFT JOIN FETCH d.termsList t
+        LEFT JOIN FETCH t.proposedBy pb
+        LEFT JOIN FETCH pb.profile
         WHERE d.id = :id
     """)
     Optional<Deal> findByIdWithDetails(UUID id);

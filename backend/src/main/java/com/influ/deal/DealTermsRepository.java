@@ -24,6 +24,6 @@ public interface DealTermsRepository extends JpaRepository<DealTerms, UUID> {
     """)
     Optional<DealTerms> findLatestProposedByDealId(UUID dealId);
 
-    @Query(value = "SELECT COALESCE(MAX(version), 0) + 1 FROM deal_terms WHERE deal_id = :dealId FOR UPDATE", nativeQuery = true)
+    @Query(value = "SELECT COALESCE(MAX(version), 0) + 1 FROM deal_terms WHERE deal_id = :dealId AND deleted_at IS NULL FOR UPDATE", nativeQuery = true)
     Integer getNextVersion(UUID dealId);
 }
