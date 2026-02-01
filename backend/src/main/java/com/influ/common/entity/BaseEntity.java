@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @MappedSuperclass
 @Getter
 @Setter
+@SQLRestriction("deleted_at IS NULL")
 public abstract class BaseEntity {
 
     @Id
