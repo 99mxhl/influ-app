@@ -13,10 +13,12 @@ public interface DealRepository extends JpaRepository<Deal, UUID> {
     @Query("""
         SELECT d FROM Deal d
         JOIN FETCH d.campaign
-        JOIN FETCH d.influencer
-        JOIN FETCH d.client
+        JOIN FETCH d.influencer i
+        LEFT JOIN FETCH i.profile
+        JOIN FETCH d.client c
+        LEFT JOIN FETCH c.profile
         LEFT JOIN FETCH d.termsList
-        WHERE d.id = :id AND d.deletedAt IS NULL
+        WHERE d.id = :id
     """)
     Optional<Deal> findByIdWithDetails(UUID id);
 

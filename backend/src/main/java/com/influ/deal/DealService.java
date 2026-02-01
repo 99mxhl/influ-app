@@ -6,6 +6,7 @@ import com.influ.campaign.CampaignStatus;
 import com.influ.common.dto.PageResponse;
 import com.influ.common.exception.BusinessRuleViolationException;
 import com.influ.common.exception.ResourceNotFoundException;
+import com.influ.config.StripeConfig;
 import com.influ.deal.dto.*;
 import com.influ.user.User;
 import com.influ.user.UserRepository;
@@ -25,8 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DealService {
 
-    private static final BigDecimal PLATFORM_FEE_PERCENT = new BigDecimal("0.10");
-
+    private final StripeConfig stripeConfig;
     private final DealRepository dealRepository;
     private final DealTermsRepository dealTermsRepository;
     private final CampaignRepository campaignRepository;
@@ -130,11 +130,8 @@ public class DealService {
             dealTermsRepository.save(currentTerms);
         }
 
-        // Calculate next version from already-loaded termsList
-        int nextVersion = deal.getTermsList().stream()
-                .mapToInt(DealTerms::getVersion)
-                .max()
-                .orElse(0) + 1;
+        // Use repository method to safely calculate next version and avoid race conditions
+        int nextVersion = dealTermsRepository.getNextVersion(dealId);
 
         DealTerms newTerms = new DealTerms();
         newTerms.setDeal(deal);
@@ -174,7 +171,7 @@ public class DealService {
 
         deal.setStatus(DealStatus.TERMS_ACCEPTED);
         deal.setAgreedAmount(currentTerms.getAmount());
-        deal.setPlatformFee(currentTerms.getAmount().multiply(PLATFORM_FEE_PERCENT).setScale(2, RoundingMode.HALF_UP));
+        deal.setPlatformFee(currentTerms.getAmount().multiply(stripeConfig.getPlatformFeePercent()).setScale(2, RoundingMode.HALF_UP));
         deal = dealRepository.save(deal);
 
         return dealMapper.toDealResponse(deal);
