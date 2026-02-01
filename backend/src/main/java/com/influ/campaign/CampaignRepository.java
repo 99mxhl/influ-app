@@ -18,38 +18,8 @@ public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
     """)
     Optional<Campaign> findByIdWithClient(UUID id);
 
-    @Query("""
-        SELECT c FROM Campaign c
-        JOIN FETCH c.client cl
-        JOIN FETCH cl.profile
-        WHERE c.client.id = :clientId
-        ORDER BY c.createdAt DESC
-    """)
-    Page<Campaign> findByClientId(UUID clientId, Pageable pageable);
+    // Paginated queries use simple queries without JOIN FETCH to avoid in-memory pagination
+    Page<Campaign> findByClientIdOrderByCreatedAtDesc(UUID clientId, Pageable pageable);
 
-    @Query("""
-        SELECT c FROM Campaign c
-        JOIN FETCH c.client cl
-        JOIN FETCH cl.profile
-        WHERE c.status = :status
-        ORDER BY c.createdAt DESC
-    """)
-    Page<Campaign> findByStatus(CampaignStatus status, Pageable pageable);
-
-    @Query("""
-        SELECT c FROM Campaign c
-        JOIN FETCH c.client cl
-        JOIN FETCH cl.profile
-        WHERE c.status = 'ACTIVE'
-        ORDER BY c.createdAt DESC
-    """)
-    Page<Campaign> findAllActive(Pageable pageable);
-
-    @Query("""
-        SELECT c FROM Campaign c
-        JOIN FETCH c.client cl
-        JOIN FETCH cl.profile
-        ORDER BY c.createdAt DESC
-    """)
-    Page<Campaign> findAllNotDeleted(Pageable pageable);
+    Page<Campaign> findByStatusOrderByCreatedAtDesc(CampaignStatus status, Pageable pageable);
 }

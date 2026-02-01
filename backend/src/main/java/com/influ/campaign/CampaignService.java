@@ -78,6 +78,10 @@ public class CampaignService {
             campaign.setPlatforms(request.getPlatforms());
         }
         if (request.getStatus() != null) {
+            // Only DRAFT and ACTIVE are allowed as initial statuses
+            if (request.getStatus() != CampaignStatus.DRAFT && request.getStatus() != CampaignStatus.ACTIVE) {
+                throw new BusinessRuleViolationException("Initial campaign status must be DRAFT or ACTIVE");
+            }
             campaign.setStatus(request.getStatus());
         }
 
@@ -172,7 +176,7 @@ public class CampaignService {
 
     @Transactional(readOnly = true)
     public PageResponse<CampaignResponse> getAllCampaigns(Pageable pageable) {
-        Page<Campaign> campaigns = campaignRepository.findAllActive(pageable);
+        Page<Campaign> campaigns = campaignRepository.findByStatusOrderByCreatedAtDesc(CampaignStatus.ACTIVE, pageable);
         return PageResponse.from(
                 campaigns,
                 campaigns.getContent().stream()
@@ -183,7 +187,7 @@ public class CampaignService {
 
     @Transactional(readOnly = true)
     public PageResponse<CampaignResponse> getMyCampaigns(User client, Pageable pageable) {
-        Page<Campaign> campaigns = campaignRepository.findByClientId(client.getId(), pageable);
+        Page<Campaign> campaigns = campaignRepository.findByClientIdOrderByCreatedAtDesc(client.getId(), pageable);
         return PageResponse.from(
                 campaigns,
                 campaigns.getContent().stream()

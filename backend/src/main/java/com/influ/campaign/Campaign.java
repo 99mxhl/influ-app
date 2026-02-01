@@ -47,15 +47,17 @@ public class Campaign extends BaseEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     @CollectionTable(name = "campaign_categories", joinColumns = @JoinColumn(name = "campaign_id"))
     @Column(name = "category")
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<String> categories = new ArrayList<>();
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "campaign_platforms", joinColumns = @JoinColumn(name = "campaign_id"))
     @Column(name = "platform")
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<Platform> platforms = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
