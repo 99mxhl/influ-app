@@ -15,4 +15,4 @@ CREATE TABLE messages (
 CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
 CREATE INDEX idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX idx_messages_created_at ON messages(created_at);
-CREATE INDEX idx_messages_unread ON messages(conversation_id, sender_id) WHERE read_at IS NULL;
+CREATE INDEX idx_messages_unread ON messages(conversation_id, sender_id, read_at) WHERE read_at IS NULL AND deleted_at IS NULL;

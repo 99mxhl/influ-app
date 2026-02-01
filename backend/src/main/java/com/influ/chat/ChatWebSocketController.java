@@ -51,7 +51,11 @@ public class ChatWebSocketController {
         log.debug("Message sent to deal {} by user {}", dealId, user.getEmail());
     }
 
-    public void broadcastToConversation(UUID dealId, MessageResponse message) {
+    /**
+     * Broadcasts a message to all subscribers of a conversation.
+     * Package-private: only accessible from within the chat module.
+     */
+    void broadcastToConversation(UUID dealId, MessageResponse message) {
         String destination = "/topic/deal." + dealId;
         messagingTemplate.convertAndSend(destination, message);
     }
