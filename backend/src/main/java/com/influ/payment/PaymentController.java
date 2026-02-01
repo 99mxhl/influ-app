@@ -7,8 +7,11 @@ import com.influ.payment.dto.PaymentResponse;
 import com.influ.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -16,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Payments", description = "Payment management endpoints")
 public class PaymentController {
 
@@ -25,8 +29,8 @@ public class PaymentController {
     @Operation(summary = "Create Stripe Connect account for influencer")
     public ApiResponse<ConnectAccountResponse> createConnectAccount(
             @AuthenticationPrincipal User user,
-            @RequestParam String returnUrl,
-            @RequestParam String refreshUrl) {
+            @RequestParam @Size(max = 2048) @Pattern(regexp = "^https://.*$") String returnUrl,
+            @RequestParam @Size(max = 2048) @Pattern(regexp = "^https://.*$") String refreshUrl) {
         return ApiResponse.success(paymentService.createConnectAccount(user, returnUrl, refreshUrl));
     }
 
@@ -40,8 +44,10 @@ public class PaymentController {
 
     @PostMapping("/{dealId}/capture")
     @Operation(summary = "Capture payment (hold in escrow)")
-    public ApiResponse<PaymentResponse> capturePayment(@PathVariable UUID dealId) {
-        return ApiResponse.success(paymentService.capturePayment(dealId));
+    public ApiResponse<PaymentResponse> capturePayment(
+            @AuthenticationPrincipal User client,
+            @PathVariable UUID dealId) {
+        return ApiResponse.success(paymentService.capturePayment(client, dealId));
     }
 
     @PostMapping("/{dealId}/release")
