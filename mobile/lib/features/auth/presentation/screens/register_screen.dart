@@ -82,7 +82,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _generalError = 'An account with this email already exists');
+        String errorMessage = 'Registration failed. Please try again.';
+        if (e.toString().contains('email') && e.toString().contains('exists')) {
+          errorMessage = 'An account with this email already exists';
+        } else {
+          errorMessage = e.toString();
+        }
+        setState(() => _generalError = errorMessage);
       }
     } finally {
       if (mounted) {
