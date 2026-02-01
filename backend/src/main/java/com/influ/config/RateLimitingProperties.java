@@ -15,6 +15,7 @@ public class RateLimitingProperties {
 
     private int authRequestsPerMinute = 10;
     private int refreshRequestsPerMinute = 5;
+    private int websocketConnectsPerMinute = 30;
     private int maxCacheSize = 10_000;
     private Duration cacheExpiry = Duration.ofMinutes(10);
     private boolean trustProxy = false;
