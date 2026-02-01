@@ -35,17 +35,20 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Review this pull request. Use `gh pr diff` to see the changes, then read any files you need for context.
+            Review pull request #${{ github.event.pull_request.number }}.
+
+            Use `gh pr diff ${{ github.event.pull_request.number }}` to see the changes, then read any files you need for context.
 
             Tech stack: Spring Boot 3.x (Java 21), PostgreSQL, Flutter 3.x with Riverpod.
 
-            First, check previous reviews using `gh pr view --json reviews` to see if there were prior requested changes.
+            First, check previous reviews using `gh pr view ${{ github.event.pull_request.number }} --json reviews` to see if there were prior requested changes.
 
             Check for bugs, security issues (OWASP top 10), code style (Google style for Java, Effective Dart for Flutter), and architecture concerns.
 
-            When done, post a review using `gh pr review`:
-            - If no issues found: approve with `gh pr review --approve --body "LGTM"`
+            When done, post a review using `gh pr review ${{ github.event.pull_request.number }}`:
+            - If no issues found: approve with `gh pr review ${{ github.event.pull_request.number }} --approve --body "LGTM"`
             - If issues found: request changes with detailed findings
 
             IMPORTANT: Do not use "#1", "#2" style references for issue numbering - use "Issue A", "Issue B" or descriptive names instead to avoid confusion with PR numbers.
+            IMPORTANT: Only review PR #${{ github.event.pull_request.number }}, do not review other PRs.
           claude_args: "--max-turns 30 --allowedTools 'Bash(gh:*)' 'Read' 'Grep' 'Glob'"
