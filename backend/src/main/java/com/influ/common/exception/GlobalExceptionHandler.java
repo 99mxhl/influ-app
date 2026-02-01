@@ -60,7 +60,7 @@ public class GlobalExceptionHandler {
         log.warn("Authentication failed: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("AUTHENTICATION_FAILED", ex.getMessage()));
+                .body(ApiResponse.error("AUTHENTICATION_FAILED", "Authentication failed"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

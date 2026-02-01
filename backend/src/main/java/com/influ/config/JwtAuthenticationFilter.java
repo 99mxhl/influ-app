@@ -22,6 +22,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final int MAX_TOKEN_LENGTH = 8192; // 8KB max to prevent DoS
+
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
@@ -39,6 +41,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7);
+
+        if (jwt.length() > MAX_TOKEN_LENGTH) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (!jwtService.isTokenValid(jwt)) {
             filterChain.doFilter(request, response);

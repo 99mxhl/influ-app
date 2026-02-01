@@ -4,17 +4,24 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class JwtService {
+
+    private static final int MIN_SECRET_BYTES = 32; // 256 bits
 
     private final SecretKey secretKey;
     private final long accessExpirationMs;
@@ -23,10 +30,40 @@ public class JwtService {
     public JwtService(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.access-expiration-ms}") long accessExpirationMs,
-            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs) {
+            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs,
+            Environment environment) {
+        validateSecret(secret, environment);
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpirationMs = accessExpirationMs;
         this.refreshExpirationMs = refreshExpirationMs;
+    }
+
+    private void validateSecret(String secret, Environment environment) {
+        boolean isProduction = Arrays.asList(environment.getActiveProfiles()).contains("prod");
+        boolean isWeak = !hasValidEntropy(secret);
+
+        if (isWeak) {
+            if (isProduction) {
+                throw new IllegalStateException(
+                    "JWT secret too weak. Use a base64-encoded secret with at least 256 bits.");
+            }
+            log.warn("Using weak JWT secret. Set a strong JWT_SECRET for production.");
+        }
+    }
+
+    private boolean hasValidEntropy(String secret) {
+        if (secret == null || secret.isEmpty()) {
+            return false;
+        }
+        try {
+            byte[] decoded = Base64.getDecoder().decode(secret);
+            return decoded.length >= MIN_SECRET_BYTES;
+        } catch (IllegalArgumentException e) {
+            // Not base64, check raw length and unique chars
+            if (secret.length() < 43) return false;
+            long uniqueChars = secret.chars().distinct().count();
+            return uniqueChars >= 10;
+        }
     }
 
     public String generateAccessToken(UUID userId, String email) {
