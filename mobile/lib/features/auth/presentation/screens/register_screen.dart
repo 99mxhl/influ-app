@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../core/network/api_response.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/enums.dart';
@@ -80,9 +81,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (mounted) {
         context.go(AppRoutes.home);
       }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _generalError = e.message);
+      }
     } catch (e) {
       if (mounted) {
-        setState(() => _generalError = 'An account with this email already exists');
+        setState(() => _generalError = 'Registration failed. Please try again.');
       }
     } finally {
       if (mounted) {

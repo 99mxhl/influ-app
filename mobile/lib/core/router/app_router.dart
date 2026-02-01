@@ -45,13 +45,31 @@ class AppRoutes {
   static const String messageDetail = '/messages/:id';
 }
 
+/// Listenable that notifies when auth state changes
+class AuthStateNotifier extends ChangeNotifier {
+  ProviderSubscription? _subscription;
+
+  AuthStateNotifier(Ref ref) {
+    _subscription = ref.listen(authStateProvider, (_, __) => notifyListeners());
+  }
+
+  @override
+  void dispose() {
+    _subscription?.close();
+    super.dispose();
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authNotifier = AuthStateNotifier(ref);
+  ref.onDispose(() => authNotifier.dispose());
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: authNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
       final isLoggedIn = authState.isAuthenticated;
       final isLoading = authState.isLoading;
       final currentPath = state.uri.path;
@@ -84,7 +102,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // CLIENT-only route check
       if (currentPath == AppRoutes.createCampaign) {
-        if (authState.user?.type != UserType.client) {
+        if (ref.read(authStateProvider).user?.type != UserType.client) {
           return AppRoutes.home;
         }
       }
