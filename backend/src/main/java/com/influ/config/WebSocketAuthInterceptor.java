@@ -25,6 +25,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
+    private static final String AUTH_FAILED_MESSAGE = "Authentication failed";
+
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
@@ -37,42 +39,50 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
             if (authHeaders == null || authHeaders.isEmpty()) {
                 log.warn("WebSocket connection rejected: missing Authorization header");
-                throw new MessageDeliveryException("Authentication required");
+                rejectConnection();
             }
 
             String authHeader = authHeaders.get(0);
             if (!authHeader.startsWith("Bearer ")) {
                 log.warn("WebSocket connection rejected: invalid Authorization header format");
-                throw new MessageDeliveryException("Invalid authorization format");
+                rejectConnection();
             }
 
             String token = authHeader.substring(7);
 
-            if (!jwtService.isTokenValid(token)) {
-                log.warn("WebSocket connection rejected: invalid or expired token");
-                throw new MessageDeliveryException("Invalid or expired token");
+            try {
+                if (!jwtService.isTokenValid(token)) {
+                    log.warn("WebSocket connection rejected: invalid or expired token");
+                    rejectConnection();
+                }
+
+                UUID userId = jwtService.extractUserId(token);
+                User user = userRepository.findByIdWithProfiles(userId).orElse(null);
+
+                if (user == null || !user.isEnabled()) {
+                    log.warn("WebSocket connection rejected: user validation failed");
+                    rejectConnection();
+                }
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                accessor.setUser(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("WebSocket authenticated for user: {}", user.getEmail());
+
+            } catch (MessageDeliveryException e) {
+                throw e;
+            } catch (Exception e) {
+                log.warn("WebSocket connection rejected: token processing failed");
+                rejectConnection();
             }
-
-            UUID userId = jwtService.extractUserId(token);
-            User user = userRepository.findByIdWithProfiles(userId).orElse(null);
-
-            if (user == null) {
-                log.warn("WebSocket connection rejected: user not found");
-                throw new MessageDeliveryException("User not found");
-            }
-
-            if (!user.isEnabled()) {
-                log.warn("WebSocket connection rejected: user account disabled");
-                throw new MessageDeliveryException("User account disabled");
-            }
-
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            accessor.setUser(authToken);
-            SecurityContextHolder.getContext().setAuthentication(authToken);
-            log.debug("WebSocket authenticated for user: {}", user.getEmail());
         }
 
         return message;
+    }
+
+    private void rejectConnection() {
+        SecurityContextHolder.clearContext();
+        throw new MessageDeliveryException(AUTH_FAILED_MESSAGE);
     }
 }
