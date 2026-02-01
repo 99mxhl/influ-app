@@ -84,7 +84,7 @@ public class ChatService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ConversationResponse getConversation(User user, UUID dealId) {
         Deal deal = getDealWithAccess(dealId, user);
         Conversation conversation = conversationRepository.findByDealId(dealId)
