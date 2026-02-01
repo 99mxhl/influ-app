@@ -49,5 +49,5 @@ jobs:
             6. Performance issues
 
             Be concise. Focus on actionable feedback.
-          allowed_tools: "Bash(read-only),Read,Glob,Grep"
+            Post your findings as a PR review comment.
           claude_args: "--max-turns 10"
