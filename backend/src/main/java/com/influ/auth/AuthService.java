@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 @Service
@@ -29,10 +30,17 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
 
+    private static final int MAX_PASSWORD_BYTES = 72;
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BusinessRuleViolationException("Email is already registered");
+        }
+
+        // BCrypt truncates at 72 bytes - validate byte length for Unicode passwords
+        if (request.getPassword().getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
+            throw new BusinessRuleViolationException("Password exceeds maximum byte length");
         }
 
         User user = new User();
@@ -71,17 +79,21 @@ public class AuthService {
     @Transactional
     public AuthResponse refresh(String refreshTokenValue) {
         String tokenHash = RefreshToken.hashToken(refreshTokenValue);
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
+        RefreshToken oldToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
 
-        if (!refreshToken.isValid()) {
+        if (!oldToken.isValid()) {
             throw new UnauthorizedException("Refresh token is expired or revoked");
         }
 
-        refreshToken.revoke();
-        refreshTokenRepository.save(refreshToken);
+        // Generate new tokens BEFORE revoking old one to avoid losing session on failure
+        AuthResponse response = generateAuthResponse(oldToken.getUser());
 
-        return generateAuthResponse(refreshToken.getUser());
+        // Only revoke after successful generation
+        oldToken.revoke();
+        refreshTokenRepository.save(oldToken);
+
+        return response;
     }
 
     @Transactional
