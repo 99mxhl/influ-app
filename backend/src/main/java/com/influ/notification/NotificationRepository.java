@@ -20,7 +20,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Query("SELECT n FROM Notification n WHERE n.id = :id AND n.deletedAt IS NULL")
     Optional<Notification> findByIdForUpdate(@Param("id") UUID id);
 
-    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.deletedAt IS NULL ORDER BY n.createdAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId")
     Page<Notification> findByUserId(@Param("userId") UUID userId, Pageable pageable);
 
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND n.readAt IS NULL AND n.deletedAt IS NULL")

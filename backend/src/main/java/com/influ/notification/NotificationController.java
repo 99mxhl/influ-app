@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -28,7 +29,7 @@ public class NotificationController {
     @Operation(summary = "Get all notifications for current user")
     public ApiResponse<PageResponse<NotificationResponse>> getNotifications(
             @AuthenticationPrincipal User user,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponse.success(PageResponse.from(notificationService.getUserNotifications(user, pageable)));
     }
 
