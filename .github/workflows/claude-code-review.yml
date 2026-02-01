@@ -43,4 +43,5 @@ jobs:
 
             When done, post a concise review comment using `gh pr review` with your findings.
             If no issues found, approve the PR. If issues found, request changes.
+          allowed_tools: "Bash(gh pr:*),Bash(gh api:*),Read,Grep,Glob"
           claude_args: "--max-turns 20"
