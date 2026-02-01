@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -34,7 +36,7 @@ public class AuthService {
         }
 
         User user = new User();
-        user.setEmail(request.getEmail().toLowerCase());
+        user.setEmail(request.getEmail().toLowerCase(Locale.ROOT));
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setType(request.getType());
         user = userRepository.save(user);
@@ -55,11 +57,12 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        String normalizedEmail = request.getEmail().toLowerCase(Locale.ROOT);
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail().toLowerCase(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
         );
 
-        User user = userRepository.findByEmail(request.getEmail().toLowerCase())
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
         return generateAuthResponse(user);

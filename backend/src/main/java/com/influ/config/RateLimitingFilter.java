@@ -1,5 +1,7 @@
 package com.influ.config;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -8,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -16,7 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -24,9 +27,29 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final int AUTH_REQUESTS_PER_MINUTE = 10;
     private static final int REFRESH_REQUESTS_PER_MINUTE = 5;
+    private static final int MAX_CACHE_SIZE = 10_000;
+    private static final Duration CACHE_EXPIRY = Duration.ofMinutes(10);
 
-    private final ConcurrentHashMap<String, Bucket> authBuckets = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Bucket> refreshBuckets = new ConcurrentHashMap<>();
+    private static final Pattern IP_PATTERN = Pattern.compile(
+            "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|" +
+            "^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$"
+    );
+
+    private final Cache<String, Bucket> authBuckets;
+    private final Cache<String, Bucket> refreshBuckets;
+    private final boolean trustProxy;
+
+    public RateLimitingFilter(@Value("${rate-limiting.trust-proxy:false}") boolean trustProxy) {
+        this.trustProxy = trustProxy;
+        this.authBuckets = Caffeine.newBuilder()
+                .maximumSize(MAX_CACHE_SIZE)
+                .expireAfterAccess(CACHE_EXPIRY)
+                .build();
+        this.refreshBuckets = Caffeine.newBuilder()
+                .maximumSize(MAX_CACHE_SIZE)
+                .expireAfterAccess(CACHE_EXPIRY)
+                .build();
+    }
 
     @Override
     protected void doFilterInternal(
@@ -38,14 +61,16 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String clientIp = getClientIp(request);
 
         if (isAuthEndpoint(path)) {
-            Bucket bucket = authBuckets.computeIfAbsent(clientIp, this::createAuthBucket);
+            Bucket bucket = authBuckets.get(clientIp, this::createAuthBucket);
             if (!bucket.tryConsume(1)) {
+                log.warn("Rate limit exceeded for auth endpoint from IP: {}", clientIp);
                 sendRateLimitResponse(response);
                 return;
             }
         } else if (isRefreshEndpoint(path)) {
-            Bucket bucket = refreshBuckets.computeIfAbsent(clientIp, this::createRefreshBucket);
+            Bucket bucket = refreshBuckets.get(clientIp, this::createRefreshBucket);
             if (!bucket.tryConsume(1)) {
+                log.warn("Rate limit exceeded for refresh endpoint from IP: {}", clientIp);
                 sendRateLimitResponse(response);
                 return;
             }
@@ -77,11 +102,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        if (trustProxy) {
+            String xForwardedFor = request.getHeader("X-Forwarded-For");
+            if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                String ip = xForwardedFor.split(",")[0].trim();
+                if (isValidIp(ip)) {
+                    return ip;
+                }
+                log.warn("Invalid IP in X-Forwarded-For header: {}", ip);
+            }
         }
         return request.getRemoteAddr();
+    }
+
+    private boolean isValidIp(String ip) {
+        return ip != null && IP_PATTERN.matcher(ip).matches();
     }
 
     private void sendRateLimitResponse(HttpServletResponse response) throws IOException {

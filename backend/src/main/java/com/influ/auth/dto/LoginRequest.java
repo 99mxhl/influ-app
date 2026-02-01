@@ -2,6 +2,7 @@ package com.influ.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,5 +15,6 @@ public class LoginRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
+    @Size(max = 72, message = "Password must not exceed 72 characters")
     private String password;
 }

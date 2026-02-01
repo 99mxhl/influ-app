@@ -58,6 +58,7 @@ dependencies {
 
     // Rate Limiting
     implementation("com.bucket4j:bucket4j-core:8.10.1")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     // MapStruct
     implementation("org.mapstruct:mapstruct:1.5.5.Final")
