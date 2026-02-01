@@ -50,4 +50,4 @@ jobs:
 
             Be concise. Focus on actionable feedback.
             Post your findings as a PR review comment.
-          claude_args: "--max-turns 10"
+          claude_args: "--max-turns 10 --model claude-opus-4-5-20251101"
