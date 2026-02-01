@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
         log.warn("Bad credentials: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("INVALID_CREDENTIALS", "Invalid email or password"));
+                .body(ApiResponse.error("INVALID_CREDENTIALS", "Invalid credentials"));
     }
 
     @ExceptionHandler(AuthenticationException.class)
@@ -60,7 +60,7 @@ public class GlobalExceptionHandler {
         log.warn("Authentication failed: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("AUTHENTICATION_FAILED", "Authentication failed"));
+                .body(ApiResponse.error("INVALID_CREDENTIALS", "Invalid credentials"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

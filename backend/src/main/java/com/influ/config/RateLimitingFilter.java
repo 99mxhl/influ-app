@@ -11,7 +11,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -27,11 +26,6 @@ import java.util.regex.Pattern;
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
-    private static final int AUTH_REQUESTS_PER_MINUTE = 10;
-    private static final int REFRESH_REQUESTS_PER_MINUTE = 5;
-    private static final int MAX_CACHE_SIZE = 10_000;
-    private static final Duration CACHE_EXPIRY = Duration.ofMinutes(10);
-
     private static final Pattern IP_PATTERN = Pattern.compile(
             "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|" +
             "^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$"
@@ -39,17 +33,17 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final Cache<String, Bucket> authBuckets;
     private final Cache<String, Bucket> refreshBuckets;
-    private final boolean trustProxy;
+    private final RateLimitingProperties properties;
 
-    public RateLimitingFilter(@Value("${rate-limiting.trust-proxy:false}") boolean trustProxy) {
-        this.trustProxy = trustProxy;
+    public RateLimitingFilter(RateLimitingProperties properties) {
+        this.properties = properties;
         this.authBuckets = Caffeine.newBuilder()
-                .maximumSize(MAX_CACHE_SIZE)
-                .expireAfterAccess(CACHE_EXPIRY)
+                .maximumSize(properties.getMaxCacheSize())
+                .expireAfterAccess(properties.getCacheExpiry())
                 .build();
         this.refreshBuckets = Caffeine.newBuilder()
-                .maximumSize(MAX_CACHE_SIZE)
-                .expireAfterAccess(CACHE_EXPIRY)
+                .maximumSize(properties.getMaxCacheSize())
+                .expireAfterAccess(properties.getCacheExpiry())
                 .build();
     }
 
@@ -65,7 +59,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if (isAuthEndpoint(path)) {
             Bucket bucket = authBuckets.get(clientIp, this::createAuthBucket);
             ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
-            addRateLimitHeaders(response, AUTH_REQUESTS_PER_MINUTE, probe);
+            addRateLimitHeaders(response, properties.getAuthRequestsPerMinute(), probe);
             if (!probe.isConsumed()) {
                 log.warn("Rate limit exceeded for auth endpoint from IP: {}", clientIp);
                 sendRateLimitResponse(response, probe.getNanosToWaitForRefill());
@@ -74,7 +68,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         } else if (isRefreshEndpoint(path)) {
             Bucket bucket = refreshBuckets.get(clientIp, this::createRefreshBucket);
             ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
-            addRateLimitHeaders(response, REFRESH_REQUESTS_PER_MINUTE, probe);
+            addRateLimitHeaders(response, properties.getRefreshRequestsPerMinute(), probe);
             if (!probe.isConsumed()) {
                 log.warn("Rate limit exceeded for refresh endpoint from IP: {}", clientIp);
                 sendRateLimitResponse(response, probe.getNanosToWaitForRefill());
@@ -94,21 +88,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private Bucket createAuthBucket(String key) {
+        int limit = properties.getAuthRequestsPerMinute();
         return Bucket.builder()
-                .addLimit(Bandwidth.classic(AUTH_REQUESTS_PER_MINUTE,
-                        Refill.greedy(AUTH_REQUESTS_PER_MINUTE, Duration.ofMinutes(1))))
+                .addLimit(Bandwidth.classic(limit, Refill.greedy(limit, Duration.ofMinutes(1))))
                 .build();
     }
 
     private Bucket createRefreshBucket(String key) {
+        int limit = properties.getRefreshRequestsPerMinute();
         return Bucket.builder()
-                .addLimit(Bandwidth.classic(REFRESH_REQUESTS_PER_MINUTE,
-                        Refill.greedy(REFRESH_REQUESTS_PER_MINUTE, Duration.ofMinutes(1))))
+                .addLimit(Bandwidth.classic(limit, Refill.greedy(limit, Duration.ofMinutes(1))))
                 .build();
     }
 
     private String getClientIp(HttpServletRequest request) {
-        if (trustProxy) {
+        if (properties.isTrustProxy()) {
             String xForwardedFor = request.getHeader("X-Forwarded-For");
             if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
                 String ip = xForwardedFor.split(",")[0].trim();
