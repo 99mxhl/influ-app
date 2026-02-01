@@ -70,7 +70,8 @@ public class AuthService {
 
     @Transactional
     public AuthResponse refresh(String refreshTokenValue) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
+        String tokenHash = RefreshToken.hashToken(refreshTokenValue);
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
 
         if (!refreshToken.isValid()) {
@@ -85,7 +86,8 @@ public class AuthService {
 
     @Transactional
     public void logout(String refreshTokenValue) {
-        refreshTokenRepository.findByToken(refreshTokenValue)
+        String tokenHash = RefreshToken.hashToken(refreshTokenValue);
+        refreshTokenRepository.findByTokenHash(tokenHash)
                 .ifPresent(token -> {
                     token.revoke();
                     refreshTokenRepository.save(token);

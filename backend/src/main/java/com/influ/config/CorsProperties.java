@@ -15,7 +15,7 @@ public class CorsProperties {
 
     private List<String> allowedOriginPatterns = List.of("http://localhost:*");
     private List<String> allowedMethods = List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
-    private List<String> allowedHeaders = List.of("*");
+    private List<String> allowedHeaders = List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With");
     private List<String> exposedHeaders = List.of("Authorization");
     private boolean allowCredentials = true;
     private long maxAge = 3600L;

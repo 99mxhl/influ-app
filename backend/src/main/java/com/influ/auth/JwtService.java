@@ -59,10 +59,9 @@ public class JwtService {
             byte[] decoded = Base64.getDecoder().decode(secret);
             return decoded.length >= MIN_SECRET_BYTES;
         } catch (IllegalArgumentException e) {
-            // Not base64, check raw length and unique chars
-            if (secret.length() < 43) return false;
-            long uniqueChars = secret.chars().distinct().count();
-            return uniqueChars >= 10;
+            // Not valid base64 - reject in favor of base64-encoded secrets
+            // This ensures proper entropy (base64 of 32+ bytes = 256+ bits)
+            return false;
         }
     }
 

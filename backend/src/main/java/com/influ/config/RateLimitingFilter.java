@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -62,16 +64,20 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         if (isAuthEndpoint(path)) {
             Bucket bucket = authBuckets.get(clientIp, this::createAuthBucket);
-            if (!bucket.tryConsume(1)) {
+            ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+            addRateLimitHeaders(response, AUTH_REQUESTS_PER_MINUTE, probe);
+            if (!probe.isConsumed()) {
                 log.warn("Rate limit exceeded for auth endpoint from IP: {}", clientIp);
-                sendRateLimitResponse(response);
+                sendRateLimitResponse(response, probe.getNanosToWaitForRefill());
                 return;
             }
         } else if (isRefreshEndpoint(path)) {
             Bucket bucket = refreshBuckets.get(clientIp, this::createRefreshBucket);
-            if (!bucket.tryConsume(1)) {
+            ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+            addRateLimitHeaders(response, REFRESH_REQUESTS_PER_MINUTE, probe);
+            if (!probe.isConsumed()) {
                 log.warn("Rate limit exceeded for refresh endpoint from IP: {}", clientIp);
-                sendRateLimitResponse(response);
+                sendRateLimitResponse(response, probe.getNanosToWaitForRefill());
                 return;
             }
         }
@@ -119,7 +125,16 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         return ip != null && IP_PATTERN.matcher(ip).matches();
     }
 
-    private void sendRateLimitResponse(HttpServletResponse response) throws IOException {
+    private void addRateLimitHeaders(HttpServletResponse response, int limit, ConsumptionProbe probe) {
+        response.setHeader("X-RateLimit-Limit", String.valueOf(limit));
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
+        long resetSeconds = TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill());
+        response.setHeader("X-RateLimit-Reset", String.valueOf(System.currentTimeMillis() / 1000 + resetSeconds));
+    }
+
+    private void sendRateLimitResponse(HttpServletResponse response, long nanosToWait) throws IOException {
+        long retryAfterSeconds = TimeUnit.NANOSECONDS.toSeconds(nanosToWait) + 1;
+        response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(
