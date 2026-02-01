@@ -106,6 +106,25 @@ public class JwtService {
         }
     }
 
+    /**
+     * Validates token and extracts user ID in a single operation.
+     * Avoids parsing the JWT twice when both validation and extraction are needed.
+     *
+     * @param token the JWT token
+     * @return the user ID if token is valid, null otherwise
+     */
+    public UUID extractUserIdIfValid(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            if (claims.getExpiration().after(new Date())) {
+                return UUID.fromString(claims.getSubject());
+            }
+            return null;
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     private Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
