@@ -19,15 +19,15 @@ Influencer marketing platform: brands + influencers, chat-based deal negotiation
 ```
 influ-app/
 ├── backend/src/main/java/com/influ/
+│   ├── common/          # BaseEntity, exceptions, ApiResponse
 │   ├── config/          # Security, WebSocket, CORS, S3, OpenAPI
 │   ├── auth/            # JWT auth, login/register
 │   ├── user/            # User, Profile, InfluencerProfile
 │   ├── campaign/        # Campaign CRUD
 │   ├── deal/            # Deal, DealTerms, Deliverable
 │   ├── chat/            # Conversation, Message, WebSocket
-│   ├── payment/         # Stripe, escrow, webhooks
-│   └── common/          # BaseEntity, exceptions, ApiResponse
-├── backend/src/main/resources/db/migration/  # Flyway V1-V8
+│   └── payment/         # Stripe, escrow, webhooks
+├── backend/src/main/resources/db/migration/
 ├── mobile/lib/
 │   ├── core/            # DI, routing, network, storage
 │   ├── features/        # auth, campaigns, deals, chat, payments, profile
@@ -37,21 +37,21 @@ influ-app/
 
 ## Core Entities
 
-All entities extend `BaseEntity`: `id` (UUID), `createdAt`, `updatedAt`, `deletedAt` (soft delete), `lockVersion` (@Version).
+**Business entities** extend `BaseEntity`: `id` (UUID), `createdAt`, `updatedAt`, `deletedAt` (soft delete), `lockVersion` (@Version).
 
-| Entity | Key Fields |
-|--------|------------|
-| User | email, passwordHash, type (INFLUENCER\|CLIENT), stripeAccountId, stripeCustomerId |
-| Profile | userId, displayName, avatarUrl, bio |
-| InfluencerProfile | categories[], baseRate, social handles/followers, avgRating, totalEarnings |
-| Campaign | clientId, title, budgetMin/Max, status, categories[], platforms[] |
-| Deal | campaignId, influencerId, clientId, status, agreedAmount, platformFee |
-| DealTerms | dealId, version, proposedById, amount, deliverables (JSON), status |
-| Deliverable | dealId, platform, contentType, contentUrl, status |
-| Payment | dealId, amount, status (PENDING→ESCROW_HELD→RELEASED), stripePaymentIntentId |
-| Message | conversationId, senderId, type (TEXT\|TERMS_PROPOSAL\|SYSTEM), content |
+**Supporting entities** (e.g., `RefreshToken`) may have their own lifecycle patterns when soft delete semantics don't apply.
 
-## Deal State Machine
+See `backend/src/main/java/com/influ/*/` for current entity fields.
+
+**Key relationships:**
+- User → Profile (1:1), User → InfluencerProfile (1:1, INFLUENCER type only)
+- Campaign → Deals (1:N)
+- Deal → DealTerms (1:N), Deal → Deliverables (1:N), Deal → Payment (1:1), Deal → Conversation (1:1)
+- Conversation → Messages (1:N)
+
+## Business Flows
+
+### Deal State Machine
 
 ```
 IDLE → INVITED/APPLIED → NEGOTIATING ⇄ TERMS_ACCEPTED → ACTIVE → CONTENT_SUBMITTED → COMPLETED/DISPUTED
@@ -59,31 +59,18 @@ IDLE → INVITED/APPLIED → NEGOTIATING ⇄ TERMS_ACCEPTED → ACTIVE → CONTE
 Any state → CANCELLED
 ```
 
-## Payment Flow
+### Payment Flow (Escrow)
 
 1. Terms accepted → Client card charged → **ESCROW_HELD**
 2. Influencer submits content → Client approves
 3. Platform transfers to influencer (minus 10% fee) → **RELEASED**
 
-## API Endpoints
+## API
 
-**Auth:** `POST /api/auth/register|login|refresh|logout` · `GET /api/auth/me`
+See OpenAPI docs at `/swagger-ui.html` when running locally.
 
-**Users:** `GET /api/users/:id` · `PUT /api/users/me` · `GET /api/influencers`
-
-**Campaigns:** `GET|POST /api/campaigns` · `GET|PUT|DELETE /api/campaigns/:id` · `GET /api/campaigns/mine`
-
-**Deals:** `GET /api/deals` · `POST /api/deals/apply|invite` · `POST /api/deals/:id/terms` · `PUT /api/deals/:id/terms/accept|reject|cancel`
-
-**Deliverables:** `POST /api/deals/:id/deliverables/:did/submit|approve|reject`
-
-**Chat:** `GET /api/deals/:id/messages` · WebSocket: `/ws/chat` (STOMP)
-
-**Payments:** `POST /api/payments/connect-account` · `POST /api/payments/:dealId/capture|release` · `POST /api/webhooks/stripe`
-
-**Files:** `POST /api/files/presign|confirm`
-
-**Response format:** `{ success, data, error, timestamp }` · Pagination: `?page=0&size=20`
+**Response format:** `{ success, data, error, timestamp }`
+**Pagination:** `?page=0&size=20`
 
 ## Commands
 
@@ -103,9 +90,20 @@ flutter test
 
 ## Key Patterns
 
-- **Optimistic locking:** `@Version` on Deal, DealTerms, Payment → 409 Conflict on concurrent modification
+### Data & Concurrency
+- **Optimistic locking:** `@Version` on entities → 409 Conflict on concurrent modification
+- **Soft deletes:** `@SQLRestriction("deleted_at IS NULL")` on all entities
+- **Lazy fetch:** Use `FetchType.LAZY` for collections, join fetch where needed
+
+### Security
+- **JWT validation:** 256-bit entropy required in prod, 8KB max token length
+- **Rate limiting:** Bucket4j on auth endpoints (10 req/min login/register, 5 req/min refresh)
+- **Password limits:** BCrypt with max 72 chars (prevents DoS)
+- **CORS:** Explicit origins only, no wildcards (including WebSocket)
+- **Input validation:** `@Valid` on all request DTOs, `@Size`/`@Pattern` on query params
+
+### External Services
 - **Webhook idempotency:** Track Stripe event IDs in `StripeEvent` table
-- **Circuit breaker:** Resilience4j on Stripe/S3 calls
 - **WebSocket auth:** JWT validated on STOMP CONNECT, subscription scoped to conversation participants
 
 ## Environment Variables
@@ -120,11 +118,23 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION
 
 **Claude must ask permission before any git operation.**
 
-- Branches: `main` (prod), `develop` (staging), `feature/*`, `fix/*`, `hotfix/*`
+- Branches: `main` (prod), `feature/*`, `fix/*`, `hotfix/*`
 - Commits: `type(scope): description` — types: feat, fix, docs, refactor, test, chore
-- PRs: feature/* → develop → main
+- PRs: feature/* → main
+- **Before pushing:** Always check if there are new PR reviews to address. Fix all issues before pushing to avoid triggering multiple CI workflows.
+- **False positive reviews:** If reviewer flags issues that don't exist in actual code (e.g., claims missing dependency that exists, or N+1 query where JOIN FETCH is used), ignore them. Refactoring can happen later on main branch.
 
 ## Code Style
 
-- Java: Google style, `@RequiredArgsConstructor`, thin controllers, DTOs only (no entities in API)
-- Dart: Effective Dart, Riverpod, freezed for models, feature-first structure
+### Java
+- Google style
+- `@RequiredArgsConstructor` for DI
+- Thin controllers, logic in services
+- DTOs only in API (no entities)
+- `@Validated` on controllers with query param validation
+
+### Dart
+- Effective Dart
+- Riverpod for state
+- Freezed for models
+- Feature-first structure
