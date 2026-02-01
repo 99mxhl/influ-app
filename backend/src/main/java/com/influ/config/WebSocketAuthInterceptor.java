@@ -47,12 +47,14 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         if (authHeaders == null || authHeaders.isEmpty()) {
             log.warn("WebSocket connection rejected: missing Authorization header");
             rejectConnection();
+            return;
         }
 
         String authHeader = authHeaders.get(0);
         if (!authHeader.startsWith("Bearer ")) {
             log.warn("WebSocket connection rejected: invalid Authorization header format");
             rejectConnection();
+            return;
         }
 
         String token = authHeader.substring(7);
@@ -62,6 +64,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             if (userId == null) {
                 log.warn("WebSocket connection rejected: invalid or expired token");
                 rejectConnection();
+                return;
             }
 
             User user = userRepository.findByIdWithProfiles(userId).orElse(null);
@@ -69,6 +72,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             if (user == null || !user.isEnabled()) {
                 log.warn("WebSocket connection rejected: user validation failed");
                 rejectConnection();
+                return;
             }
 
             UsernamePasswordAuthenticationToken authToken =
