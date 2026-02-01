@@ -153,9 +153,14 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentResponse capturePayment(UUID dealId) {
+    public PaymentResponse capturePayment(User client, UUID dealId) {
         Payment payment = paymentRepository.findByDealId(dealId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "dealId", dealId));
+
+        // Authorization check - only the deal's client can capture payment
+        if (!payment.getDeal().getClient().getId().equals(client.getId())) {
+            throw new AccessDeniedException("Only the deal's client can capture payment");
+        }
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
             throw new BusinessRuleViolationException("Payment cannot be captured in current status: " + payment.getStatus());
@@ -251,7 +256,8 @@ public class PaymentService {
     public void handlePaymentIntentSucceeded(String paymentIntentId) {
         Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId).orElse(null);
         if (payment != null && payment.getStatus() == PaymentStatus.PENDING) {
-            capturePayment(payment.getDeal().getId());
+            // Internal call from webhook - use deal's client for authorization
+            capturePayment(payment.getDeal().getClient(), payment.getDeal().getId());
         }
     }
 
