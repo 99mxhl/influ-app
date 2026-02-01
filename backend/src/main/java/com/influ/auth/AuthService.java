@@ -51,7 +51,8 @@ public class AuthService {
 
         Profile profile = new Profile();
         profile.setUser(user);
-        profile.setDisplayName(request.getDisplayName() != null ? request.getDisplayName() : "User");
+        String displayName = request.getDisplayName();
+        profile.setDisplayName(displayName != null && !displayName.isBlank() ? displayName.trim() : "User");
         profileRepository.save(profile);
 
         if (request.getType() == UserType.INFLUENCER) {

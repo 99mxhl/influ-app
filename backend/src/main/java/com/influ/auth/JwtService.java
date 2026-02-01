@@ -55,14 +55,17 @@ public class JwtService {
         if (secret == null || secret.isEmpty()) {
             return false;
         }
+        // Try base64 first
         try {
             byte[] decoded = Base64.getDecoder().decode(secret);
-            return decoded.length >= MIN_SECRET_BYTES;
+            if (decoded.length >= MIN_SECRET_BYTES) {
+                return true;
+            }
         } catch (IllegalArgumentException e) {
-            // Not valid base64 - reject in favor of base64-encoded secrets
-            // This ensures proper entropy (base64 of 32+ bytes = 256+ bits)
-            return false;
+            // Not base64, check raw bytes
         }
+        // Accept raw strings with sufficient byte length
+        return secret.getBytes(java.nio.charset.StandardCharsets.UTF_8).length >= MIN_SECRET_BYTES;
     }
 
     public String generateAccessToken(UUID userId, String email) {

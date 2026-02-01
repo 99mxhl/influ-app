@@ -37,7 +37,9 @@ influ-app/
 
 ## Core Entities
 
-All entities extend `BaseEntity`: `id` (UUID), `createdAt`, `updatedAt`, `deletedAt` (soft delete), `lockVersion` (@Version).
+**Business entities** extend `BaseEntity`: `id` (UUID), `createdAt`, `updatedAt`, `deletedAt` (soft delete), `lockVersion` (@Version).
+
+**Supporting entities** (e.g., `RefreshToken`) may have their own lifecycle patterns when soft delete semantics don't apply.
 
 See `backend/src/main/java/com/influ/*/` for current entity fields.
 
