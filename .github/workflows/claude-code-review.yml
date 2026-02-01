@@ -39,10 +39,13 @@ jobs:
 
             Tech stack: Spring Boot 3.x (Java 21), PostgreSQL, Flutter 3.x with Riverpod.
 
+            First, check previous reviews using `gh pr view --json reviews` to see if there were prior requested changes.
+
             Check for bugs, security issues (OWASP top 10), code style (Google style for Java, Effective Dart for Flutter), and architecture concerns.
 
-            When done, post a concise review comment using `gh pr review` with your findings.
-            If no issues found, approve the PR. If issues found, request changes.
+            When done, post a review using `gh pr review`:
+            - If no issues found: approve with `gh pr review --approve --body "LGTM"`
+            - If issues found: request changes with detailed findings
 
             IMPORTANT: Do not use "#1", "#2" style references for issue numbering - use "Issue A", "Issue B" or descriptive names instead to avoid confusion with PR numbers.
           claude_args: "--max-turns 30 --allowedTools 'Bash(gh:*)' 'Read' 'Grep' 'Glob'"
