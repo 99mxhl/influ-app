@@ -1,6 +1,7 @@
 package com.influ.chat;
 
 import com.influ.chat.dto.ConversationResponse;
+import com.influ.chat.dto.ConversationWithStats;
 import com.influ.chat.dto.MessageResponse;
 import com.influ.chat.dto.SendMessageRequest;
 import com.influ.common.dto.PageResponse;
@@ -10,12 +11,14 @@ import com.influ.deal.DealRepository;
 import com.influ.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -120,36 +123,47 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public PageResponse<ConversationResponse> getUserConversations(User user, Pageable pageable) {
-        Page<Conversation> conversations = conversationRepository.findByUserId(user.getId(), pageable);
-
-        return PageResponse.from(
-                conversations,
-                conversations.getContent().stream()
-                        .map(conv -> {
-                            Deal deal = conv.getDeal();
-                            Page<Message> lastMessagePage = messageRepository.findByDealId(deal.getId(), Pageable.ofSize(1));
-                            MessageResponse lastMessage = lastMessagePage.hasContent()
-                                    ? chatMapper.toMessageResponse(lastMessagePage.getContent().get(0))
-                                    : null;
-                            long unreadCount = messageRepository.countUnread(conv.getId(), user.getId());
-
-                            return ConversationResponse.builder()
-                                    .id(conv.getId())
-                                    .dealId(deal.getId())
-                                    .dealTitle(deal.getCampaign().getTitle())
-                                    .influencerId(deal.getInfluencer().getId())
-                                    .influencerDisplayName(deal.getInfluencer().getProfile() != null
-                                            ? deal.getInfluencer().getProfile().getDisplayName() : null)
-                                    .clientId(deal.getClient().getId())
-                                    .clientDisplayName(deal.getClient().getProfile() != null
-                                            ? deal.getClient().getProfile().getDisplayName() : null)
-                                    .lastMessage(lastMessage)
-                                    .unreadCount(unreadCount)
-                                    .createdAt(conv.getCreatedAt())
-                                    .build();
-                        })
-                        .toList()
+        // Single query fetches conversations with last message and unread count
+        List<ConversationWithStats> stats = conversationRepository.findByUserIdWithStats(
+                user.getId(),
+                pageable.getPageSize(),
+                (int) pageable.getOffset()
         );
+        long total = conversationRepository.countByUserId(user.getId());
+
+        List<ConversationResponse> responses = stats.stream()
+                .map(this::mapToConversationResponse)
+                .toList();
+
+        Page<ConversationResponse> page = new PageImpl<>(responses, pageable, total);
+        return PageResponse.from(page);
+    }
+
+    private ConversationResponse mapToConversationResponse(ConversationWithStats stats) {
+        MessageResponse lastMessage = null;
+        if (stats.getLastMessageId() != null) {
+            lastMessage = MessageResponse.builder()
+                    .id(stats.getLastMessageId())
+                    .senderId(stats.getLastMessageSenderId())
+                    .senderDisplayName(stats.getLastMessageSenderDisplayName())
+                    .type(stats.getLastMessageType() != null ? MessageType.valueOf(stats.getLastMessageType()) : null)
+                    .content(stats.getLastMessageContent())
+                    .createdAt(stats.getLastMessageCreatedAt())
+                    .build();
+        }
+
+        return ConversationResponse.builder()
+                .id(stats.getConversationId())
+                .dealId(stats.getDealId())
+                .dealTitle(stats.getDealTitle())
+                .influencerId(stats.getInfluencerId())
+                .influencerDisplayName(stats.getInfluencerDisplayName())
+                .clientId(stats.getClientId())
+                .clientDisplayName(stats.getClientDisplayName())
+                .lastMessage(lastMessage)
+                .unreadCount(stats.getUnreadCount())
+                .createdAt(stats.getConversationCreatedAt())
+                .build();
     }
 
     private Deal getDealWithAccess(UUID dealId, User user) {
