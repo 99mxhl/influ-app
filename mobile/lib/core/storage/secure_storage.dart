@@ -1,61 +1,66 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// Secure token storage using platform-specific secure storage.
+/// - iOS: Keychain
+/// - Android: EncryptedSharedPreferences
 class SecureStorage {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
 
   final FlutterSecureStorage _storage;
 
-  // In-memory fallback for web when secure storage fails
-  final Map<String, String> _memoryStorage = {};
-
   SecureStorage({FlutterSecureStorage? storage})
       : _storage = storage ??
             const FlutterSecureStorage(
               aOptions: AndroidOptions(encryptedSharedPreferences: true),
-              iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-              webOptions: WebOptions(
-                dbName: 'influ_app',
-                publicKey: 'influ_app_key',
+              iOptions: IOSOptions(
+                accessibility: KeychainAccessibility.first_unlock_this_device,
               ),
             );
 
   Future<String?> getAccessToken() async {
     try {
-      final token = await _storage.read(key: _accessTokenKey);
-      return token ?? _memoryStorage[_accessTokenKey];
+      return await _storage.read(key: _accessTokenKey);
     } catch (e) {
-      // Web platform doesn't support secure storage well, fallback silently
-      return _memoryStorage[_accessTokenKey];
+      if (kDebugMode) {
+        debugPrint('SecureStorage: Failed to read access token: $e');
+      }
+      return null;
     }
   }
 
   Future<void> setAccessToken(String token) async {
-    _memoryStorage[_accessTokenKey] = token;
     try {
       await _storage.write(key: _accessTokenKey, value: token);
     } catch (e) {
-      // Web platform fallback - token already in memory
+      if (kDebugMode) {
+        debugPrint('SecureStorage: Failed to write access token: $e');
+      }
+      rethrow;
     }
   }
 
   Future<String?> getRefreshToken() async {
     try {
-      final token = await _storage.read(key: _refreshTokenKey);
-      return token ?? _memoryStorage[_refreshTokenKey];
+      return await _storage.read(key: _refreshTokenKey);
     } catch (e) {
-      // Web platform fallback
-      return _memoryStorage[_refreshTokenKey];
+      if (kDebugMode) {
+        debugPrint('SecureStorage: Failed to read refresh token: $e');
+      }
+      return null;
     }
   }
 
   Future<void> setRefreshToken(String token) async {
-    _memoryStorage[_refreshTokenKey] = token;
     try {
       await _storage.write(key: _refreshTokenKey, value: token);
     } catch (e) {
-      // Web platform fallback - token already in memory
+      if (kDebugMode) {
+        debugPrint('SecureStorage: Failed to write refresh token: $e');
+      }
+      rethrow;
     }
   }
 
@@ -70,14 +75,16 @@ class SecureStorage {
   }
 
   Future<void> clearTokens() async {
-    _memoryStorage.clear();
     try {
       await Future.wait([
         _storage.delete(key: _accessTokenKey),
         _storage.delete(key: _refreshTokenKey),
       ]);
     } catch (e) {
-      // Web platform fallback - memory already cleared
+      if (kDebugMode) {
+        debugPrint('SecureStorage: Failed to clear tokens: $e');
+      }
+      // Don't rethrow on clear - best effort cleanup
     }
   }
 

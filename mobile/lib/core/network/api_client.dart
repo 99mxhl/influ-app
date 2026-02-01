@@ -1,43 +1,50 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/api_constants.dart';
 import '../storage/secure_storage.dart';
 import 'auth_interceptor.dart';
 
-class _ColoredLogInterceptor extends Interceptor {
+/// Debug-only logging interceptor that sanitizes sensitive data.
+/// Only active when kDebugMode is true.
+class _DebugLogInterceptor extends Interceptor {
+  /// Headers that should never be logged
+  static const _sensitiveHeaders = {'authorization', 'cookie', 'set-cookie'};
+
+  Map<String, dynamic> _sanitizeHeaders(Map<String, dynamic> headers) {
+    return headers.map((key, value) {
+      if (_sensitiveHeaders.contains(key.toLowerCase())) {
+        return MapEntry(key, '[REDACTED]');
+      }
+      return MapEntry(key, value);
+    });
+  }
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    print('*** Request ***');
-    print('uri: ${options.uri}');
-    print('method: ${options.method}');
-    print('headers: ${options.headers}');
-    if (options.data != null) print('data: ${options.data}');
-    print('');
+    if (kDebugMode) {
+      debugPrint('>>> ${options.method} ${options.uri}');
+      debugPrint('    Headers: ${_sanitizeHeaders(options.headers)}');
+    }
     handler.next(options);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    print('\x1B[32m*** Response ***\x1B[0m'); // Green
-    print('\x1B[32muri: ${response.requestOptions.uri}\x1B[0m');
-    print('\x1B[32mstatusCode: ${response.statusCode}\x1B[0m');
-    print('\x1B[32mResponse: ${response.data}\x1B[0m');
-    print('');
+    if (kDebugMode) {
+      debugPrint('<<< ${response.statusCode} ${response.requestOptions.uri}');
+    }
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    print('\x1B[31m*** DioException ***\x1B[0m'); // Red
-    print('\x1B[31muri: ${err.requestOptions.uri}\x1B[0m');
-    print('\x1B[31mtype: ${err.type}\x1B[0m');
-    print('\x1B[31mmessage: ${err.message}\x1B[0m');
-    if (err.response != null) {
-      print('\x1B[31mstatusCode: ${err.response?.statusCode}\x1B[0m');
-      print('\x1B[31mresponse: ${err.response?.data}\x1B[0m');
+    if (kDebugMode) {
+      debugPrint('!!! ${err.type} ${err.requestOptions.uri}');
+      debugPrint('    Status: ${err.response?.statusCode}');
+      debugPrint('    Message: ${err.message}');
     }
-    print('');
     handler.next(err);
   }
 }
@@ -119,7 +126,9 @@ final dioProvider = Provider<Dio>((ref) {
 
   final secureStorage = ref.watch(secureStorageProvider);
   dio.interceptors.add(AuthInterceptor(dio, secureStorage));
-  dio.interceptors.add(_ColoredLogInterceptor());
+  if (kDebugMode) {
+    dio.interceptors.add(_DebugLogInterceptor());
+  }
 
   return dio;
 });

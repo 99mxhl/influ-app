@@ -21,16 +21,14 @@ class AuthRepository {
         data: request.toJson(),
       );
 
-      debugPrint('Login response status: ${response.statusCode}');
-      debugPrint('Login response data: ${response.data}');
-
       return parseApiResponse(
         response.data as Map<String, dynamic>,
         (data) => AuthResponse.fromJson(data as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      debugPrint('Login DioException: ${e.type} - ${e.message}');
-      debugPrint('Login error response: ${e.response?.data}');
+      if (kDebugMode) {
+        debugPrint('Login failed: ${e.type} - status ${e.response?.statusCode}');
+      }
       if (e.response?.data != null) {
         throw ApiException.fromResponse(
           e.response!.data as Map<String, dynamic>,
@@ -38,9 +36,6 @@ class AuthRepository {
         );
       }
       throw ApiException(message: 'Login failed. Please try again.');
-    } catch (e) {
-      debugPrint('Login other error: $e');
-      rethrow;
     }
   }
 
@@ -88,9 +83,19 @@ class AuthRepository {
     }
   }
 
-  void logout() {
-    // Fire and forget - don't wait for backend response
-    _apiClient.post(ApiConstants.logout).ignore();
+  /// Notifies backend of logout. Returns true if successful, false otherwise.
+  /// Caller should clear local tokens regardless of result.
+  Future<bool> logout() async {
+    try {
+      await _apiClient.post(ApiConstants.logout);
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Logout API call failed: $e');
+      }
+      // Return false but don't throw - local logout should still proceed
+      return false;
+    }
   }
 
   Future<User> getMe() async {

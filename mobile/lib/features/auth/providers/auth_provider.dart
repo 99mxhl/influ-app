@@ -99,10 +99,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    // Don't wait for backend - just clear local state immediately
-    _authRepository.logout();
+    // Clear local state first for immediate UI response
     await _secureStorage.clearTokens();
     state = const AuthState(isLoading: false, user: null);
+
+    // Then notify backend (best effort, don't block on result)
+    await _authRepository.logout();
   }
 
   void updateUser(User user) {

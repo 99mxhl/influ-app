@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http_parser/http_parser.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_response.dart';
@@ -14,7 +14,13 @@ final fileRepositoryProvider = Provider<FileRepository>((ref) {
 
 class FileRepository {
   final ApiClient _apiClient;
-  final Dio _uploadDio = Dio();
+
+  /// Separate Dio instance for S3 uploads (no auth interceptor needed)
+  final Dio _uploadDio = Dio(BaseOptions(
+    connectTimeout: const Duration(minutes: 2),
+    receiveTimeout: const Duration(minutes: 2),
+    sendTimeout: const Duration(minutes: 5),
+  ));
 
   FileRepository(this._apiClient);
 
@@ -68,14 +74,29 @@ class FileRepository {
     return presignResponse.publicUrl;
   }
 
+  /// Confirms upload with backend. Retries once on failure.
+  /// Logs errors but doesn't throw - upload already succeeded at S3.
   Future<void> confirmUpload(String fileKey) async {
-    try {
-      await _apiClient.post(
-        '/api/files/confirm',
-        data: {'fileKey': fileKey},
-      );
-    } on DioException {
-      // Silently fail for confirm
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await _apiClient.post(
+          '/api/files/confirm',
+          data: {'fileKey': fileKey},
+        );
+        return;
+      } on DioException catch (e) {
+        if (kDebugMode) {
+          debugPrint('Upload confirm failed (attempt $attempt): ${e.message}');
+        }
+        if (attempt < 2) {
+          await Future.delayed(const Duration(seconds: 1));
+        }
+      }
+    }
+    // File is uploaded to S3 but backend doesn't know about it.
+    // This is logged but not thrown since the file is accessible.
+    if (kDebugMode) {
+      debugPrint('Upload confirm failed for key: $fileKey');
     }
   }
 
