@@ -62,6 +62,7 @@ class AuthStateNotifier extends ChangeNotifier {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = AuthStateNotifier(ref);
+  ref.onDispose(() => authNotifier.dispose());
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
