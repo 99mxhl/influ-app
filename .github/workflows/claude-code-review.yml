@@ -43,4 +43,6 @@ jobs:
 
             When done, post a concise review comment using `gh pr review` with your findings.
             If no issues found, approve the PR. If issues found, request changes.
+
+            IMPORTANT: Do not use "#1", "#2" style references for issue numbering - use "Issue A", "Issue B" or descriptive names instead to avoid confusion with PR numbers.
           claude_args: "--max-turns 20 --allowedTools 'Bash(gh:*)' 'Read' 'Grep' 'Glob'"
