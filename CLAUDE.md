@@ -121,6 +121,7 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION
 - Branches: `main` (prod), `feature/*`, `fix/*`, `hotfix/*`
 - Commits: `type(scope): description` — types: feat, fix, docs, refactor, test, chore
 - PRs: feature/* → main
+- **Before pushing:** Always check if there are new PR reviews to address. Fix all issues before pushing to avoid triggering multiple CI workflows.
 
 ## Code Style
 

@@ -13,7 +13,7 @@ public class ProfileUpdateRequest {
     private String displayName;
 
     @Size(max = 2048, message = "Avatar URL must be at most 2048 characters")
-    @Pattern(regexp = "^(https?://[a-zA-Z0-9][-a-zA-Z0-9]*\\.[-a-zA-Z0-9.]+.*)?$", message = "Avatar URL must be a valid HTTP/HTTPS URL")
+    @Pattern(regexp = "^(https://[a-zA-Z0-9][-a-zA-Z0-9]*\\.[-a-zA-Z0-9.]+.*)?$", message = "Avatar URL must be a valid HTTPS URL")
     private String avatarUrl;
 
     @Size(max = 500, message = "Bio must be at most 500 characters")

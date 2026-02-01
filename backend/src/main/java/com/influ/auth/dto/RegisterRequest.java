@@ -24,5 +24,6 @@ public class RegisterRequest {
     @NotNull(message = "User type is required")
     private UserType type;
 
+    @Size(max = 100, message = "Display name must not exceed 100 characters")
     private String displayName;
 }
