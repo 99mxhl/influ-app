@@ -1,44 +1,53 @@
+# Claude Code Review
+# Automatically reviews PRs for bugs, security issues, and code quality
+#
+# Prerequisites:
+# 1. Install GitHub App: /install-github-app in Claude Code terminal
+# 2. Add ANTHROPIC_API_KEY to repository secrets:
+#    Settings → Secrets and variables → Actions → New repository secret
+
 name: Claude Code Review
 
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
 
 jobs:
-  claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-
+  review:
+    # Skip draft PRs
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
       id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
-      - name: Run Claude Code Review
-        id: claude-review
+      - name: Claude Code Review
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this PR for an influencer marketing platform.
 
+            Tech stack:
+            - Backend: Spring Boot 3.x (Java 21), PostgreSQL, Flyway
+            - Mobile: Flutter 3.x with Riverpod
+
+            Check for:
+            1. Bugs and logic errors
+            2. Security vulnerabilities (OWASP top 10, SQL injection, XSS)
+            3. Code style issues (Google style for Java, Effective Dart for Flutter)
+            4. Architecture concerns
+            5. Missing error handling
+            6. Performance issues
+
+            Be concise. Focus on actionable feedback.
+          allowed_tools: "Bash(read-only),Read,Glob,Grep"
+          claude_args: "--max-turns 10"
