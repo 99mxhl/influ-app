@@ -17,6 +17,7 @@ jobs:
     # Skip draft PRs
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     permissions:
       contents: read
@@ -34,20 +35,14 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Review this PR for an influencer marketing platform.
+            Review this pull request. Use `gh pr diff` to see the changes, then read any files you need for context.
 
-            Tech stack:
-            - Backend: Spring Boot 3.x (Java 21), PostgreSQL, Flyway
-            - Mobile: Flutter 3.x with Riverpod
+            Tech stack: Spring Boot 3.x (Java 21), PostgreSQL, Flutter 3.x with Riverpod.
 
-            Check for:
-            1. Bugs and logic errors
-            2. Security vulnerabilities (OWASP top 10, SQL injection, XSS)
-            3. Code style issues (Google style for Java, Effective Dart for Flutter)
-            4. Architecture concerns
-            5. Missing error handling
-            6. Performance issues
+            Check for bugs, security issues (OWASP top 10), code style (Google style for Java, Effective Dart for Flutter), and architecture concerns.
 
-            Be concise. Focus on actionable feedback.
-            Post your findings as a PR review comment.
-          claude_args: "--max-turns 10 --model claude-opus-4-5-20251101"
+            When done, post a concise review comment using `gh pr review` with your findings.
+            If no issues found, approve the PR. If issues found, request changes.
+
+            IMPORTANT: Do not use "#1", "#2" style references for issue numbering - use "Issue A", "Issue B" or descriptive names instead to avoid confusion with PR numbers.
+          claude_args: "--max-turns 30 --allowedTools 'Bash(gh:*)' 'Read' 'Grep' 'Glob'"
