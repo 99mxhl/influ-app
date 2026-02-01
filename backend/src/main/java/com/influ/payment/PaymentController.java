@@ -25,12 +25,14 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    private static final String URL_PATTERN = "^https://[a-zA-Z0-9][-a-zA-Z0-9]*(?:\\.[a-zA-Z0-9][-a-zA-Z0-9]*)+(?:/[\\w\\-.~:/?#\\[\\]@!$&'()*+,;=%]*)?$";
+
     @PostMapping("/connect-account")
     @Operation(summary = "Create Stripe Connect account for influencer")
     public ApiResponse<ConnectAccountResponse> createConnectAccount(
             @AuthenticationPrincipal User user,
-            @RequestParam @Size(max = 2048) @Pattern(regexp = "^https://.*$") String returnUrl,
-            @RequestParam @Size(max = 2048) @Pattern(regexp = "^https://.*$") String refreshUrl) {
+            @RequestParam @Size(max = 2048) @Pattern(regexp = URL_PATTERN, message = "Invalid URL format") String returnUrl,
+            @RequestParam @Size(max = 2048) @Pattern(regexp = URL_PATTERN, message = "Invalid URL format") String refreshUrl) {
         return ApiResponse.success(paymentService.createConnectAccount(user, returnUrl, refreshUrl));
     }
 
