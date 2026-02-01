@@ -47,8 +47,16 @@ class AppRoutes {
 
 /// Listenable that notifies when auth state changes
 class AuthStateNotifier extends ChangeNotifier {
+  ProviderSubscription? _subscription;
+
   AuthStateNotifier(Ref ref) {
-    ref.listen(authStateProvider, (_, __) => notifyListeners());
+    _subscription = ref.listen(authStateProvider, (_, __) => notifyListeners());
+  }
+
+  @override
+  void dispose() {
+    _subscription?.close();
+    super.dispose();
   }
 }
 
