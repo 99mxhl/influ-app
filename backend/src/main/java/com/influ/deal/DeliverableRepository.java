@@ -48,4 +48,13 @@ public interface DeliverableRepository extends JpaRepository<Deliverable, UUID> 
         AND d.deletedAt IS NULL
     """)
     long countTotalDeliverables(UUID dealId);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(d) > 0 THEN true ELSE false END
+        FROM Deliverable d
+        WHERE d.deal.id = :dealId
+        AND d.status = 'SUBMITTED'
+        AND d.deletedAt IS NULL
+    """)
+    boolean hasSubmittedDeliverables(UUID dealId);
 }

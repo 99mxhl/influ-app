@@ -5,6 +5,7 @@ import com.influ.common.exception.ResourceNotFoundException;
 import com.influ.deal.dto.CreateDeliverableRequest;
 import com.influ.deal.dto.DeliverableResponse;
 import com.influ.deal.dto.RejectDeliverableRequest;
+import com.influ.deal.dto.RequestRevisionRequest;
 import com.influ.deal.dto.SubmitDeliverableRequest;
 import com.influ.user.User;
 import lombok.RequiredArgsConstructor;
@@ -110,7 +111,7 @@ public class DeliverableService {
     }
 
     @Transactional
-    public DeliverableResponse requestRevision(User user, UUID dealId, UUID deliverableId, RejectDeliverableRequest request) {
+    public DeliverableResponse requestRevision(User user, UUID dealId, UUID deliverableId, RequestRevisionRequest request) {
         Deal deal = dealAccessHelper.getDealWithClientAccess(dealId, user);
 
         if (!deal.getStatus().allowsDeliverableOperations()) {
@@ -163,23 +164,20 @@ public class DeliverableService {
         if (totalDeliverables > 0 && !deliverableRepository.hasUncompletedDeliverables(deal.getId())) {
             deal.setStatus(DealStatus.CONTENT_SUBMITTED);
             dealRepository.save(deal);
-        } else if (deal.getStatus() == DealStatus.ACTIVE) {
-            boolean anySubmitted = deliverableRepository.findByDealId(deal.getId()).stream()
-                    .anyMatch(d -> d.getStatus() == DeliverableStatus.SUBMITTED);
-            if (anySubmitted) {
-                deal.setStatus(DealStatus.CONTENT_SUBMITTED);
-                dealRepository.save(deal);
-            }
+        } else if (deal.getStatus() == DealStatus.ACTIVE && deliverableRepository.hasSubmittedDeliverables(deal.getId())) {
+            deal.setStatus(DealStatus.CONTENT_SUBMITTED);
+            dealRepository.save(deal);
         }
     }
 
     private void checkAndCompleteDeal(Deal deal) {
-        if (!deliverableRepository.hasUncompletedDeliverables(deal.getId())) {
-            long approvedCount = deliverableRepository.countApprovedDeliverables(deal.getId());
-            if (approvedCount > 0) {
-                deal.setStatus(DealStatus.COMPLETED);
-                dealRepository.save(deal);
-            }
+        long totalCount = deliverableRepository.countTotalDeliverables(deal.getId());
+        long approvedCount = deliverableRepository.countApprovedDeliverables(deal.getId());
+
+        // Complete the deal only if there are deliverables AND all are approved
+        if (totalCount > 0 && approvedCount == totalCount) {
+            deal.setStatus(DealStatus.COMPLETED);
+            dealRepository.save(deal);
         }
     }
 }

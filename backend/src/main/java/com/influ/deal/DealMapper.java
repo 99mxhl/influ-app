@@ -8,13 +8,15 @@ import com.influ.deal.dto.DeliverableResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface DealMapper {
+public abstract class DealMapper {
 
-    ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    @Autowired
+    protected ObjectMapper objectMapper;
 
     @Mapping(target = "campaignId", source = "campaign.id")
     @Mapping(target = "campaignTitle", source = "campaign.title")
@@ -23,27 +25,28 @@ public interface DealMapper {
     @Mapping(target = "clientId", source = "client.id")
     @Mapping(target = "clientDisplayName", source = "client.profile.displayName")
     @Mapping(target = "currentTerms", expression = "java(toTermsResponse(deal.getCurrentTerms()))")
-    DealResponse toDealResponse(Deal deal);
+    public abstract DealResponse toDealResponse(Deal deal);
 
     @Mapping(target = "dealId", source = "deal.id")
     @Mapping(target = "proposedById", source = "proposedBy.id")
     @Mapping(target = "proposedByDisplayName", source = "proposedBy.profile.displayName")
     @Mapping(target = "deliverables", source = "deliverables", qualifiedByName = "parseDeliverables")
-    DealTermsResponse toTermsResponse(DealTerms terms);
+    public abstract DealTermsResponse toTermsResponse(DealTerms terms);
 
     @Named("parseDeliverables")
-    default JsonNode parseDeliverables(String deliverables) {
+    protected JsonNode parseDeliverables(String deliverables) {
         if (deliverables == null || deliverables.isBlank()) {
-            return OBJECT_MAPPER.createArrayNode();
+            return objectMapper.createArrayNode();
         }
         try {
-            return OBJECT_MAPPER.readTree(deliverables);
+            return objectMapper.readTree(deliverables);
         } catch (Exception e) {
-            return OBJECT_MAPPER.createArrayNode();
+            return objectMapper.createArrayNode();
         }
     }
 
-    DeliverableResponse toDeliverableResponse(Deliverable deliverable);
+    @Mapping(target = "dealId", source = "deal.id")
+    public abstract DeliverableResponse toDeliverableResponse(Deliverable deliverable);
 
-    List<DeliverableResponse> toDeliverableResponseList(List<Deliverable> deliverables);
+    public abstract List<DeliverableResponse> toDeliverableResponseList(List<Deliverable> deliverables);
 }

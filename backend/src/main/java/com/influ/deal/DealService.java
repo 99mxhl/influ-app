@@ -214,6 +214,11 @@ public class DealService {
         return dealMapper.toDealResponse(deal);
     }
 
+    /**
+     * Activates a deal after payment has been captured.
+     * Internal use only - called by PaymentService after successful payment.
+     * Not exposed via REST API.
+     */
     @Transactional
     public DealResponse activateDeal(UUID dealId) {
         Deal deal = dealRepository.findByIdWithDetails(dealId)

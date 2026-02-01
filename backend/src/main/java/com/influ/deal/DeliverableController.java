@@ -4,6 +4,7 @@ import com.influ.common.dto.ApiResponse;
 import com.influ.deal.dto.CreateDeliverableRequest;
 import com.influ.deal.dto.DeliverableResponse;
 import com.influ.deal.dto.RejectDeliverableRequest;
+import com.influ.deal.dto.RequestRevisionRequest;
 import com.influ.deal.dto.SubmitDeliverableRequest;
 import com.influ.user.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/deals/{dealId}/deliverables")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Deliverables", description = "Deliverable management endpoints")
 public class DeliverableController {
 
@@ -87,7 +90,7 @@ public class DeliverableController {
             @AuthenticationPrincipal User user,
             @PathVariable UUID dealId,
             @PathVariable UUID id,
-            @Valid @RequestBody RejectDeliverableRequest request) {
+            @Valid @RequestBody RequestRevisionRequest request) {
         return ApiResponse.success(deliverableService.requestRevision(user, dealId, id, request));
     }
 }
