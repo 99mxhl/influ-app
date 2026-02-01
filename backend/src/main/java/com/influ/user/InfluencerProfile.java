@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "influencer_profiles")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,7 +23,7 @@ public class InfluencerProfile extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "influencer_categories", joinColumns = @JoinColumn(name = "influencer_profile_id"))
     @Column(name = "category")
     private List<String> categories = new ArrayList<>();
