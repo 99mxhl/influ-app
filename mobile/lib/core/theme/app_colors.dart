@@ -85,6 +85,15 @@ class AppColors {
   static const Color verified = Color(0xFF3B82F6);
 
   // ============================================
+  // Platform Brand Colors
+  // ============================================
+  static const Color instagram = Color(0xFFE1306C);
+  static const Color youtube = Color(0xFFFF0000);
+  static const Color xTwitter = Color(0xFF000000);
+  static const Color facebook = Color(0xFF1877F2);
+  static const Color tiktok = Color(0xFF000000);
+
+  // ============================================
   // Text Colors - Light Mode
   // ============================================
   static const Color textPrimary = gray800;
