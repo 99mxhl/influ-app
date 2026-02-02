@@ -121,7 +121,7 @@ class HomeScreen extends ConsumerWidget {
                                   context,
                                   label: 'Active Deals',
                                   value: '3',
-                                  icon: LucideIcons.gift,
+                                  icon: LucideIcons.briefcase,
                                 ),
                               ),
                               const SizedBox(width: 12),
