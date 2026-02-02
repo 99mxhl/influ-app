@@ -68,7 +68,7 @@ enum Platform {
       case Platform.youtube:
         return 'YouTube';
       case Platform.twitter:
-        return 'Twitter';
+        return 'X';
       case Platform.facebook:
         return 'Facebook';
     }
