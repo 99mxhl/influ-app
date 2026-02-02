@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/utils/extensions.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../../../campaigns/data/models/campaign.dart';
 import '../../../campaigns/providers/campaigns_provider.dart';
@@ -284,12 +285,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
-      child: EmptyState(
-        icon: LucideIcons.search,
-        title: 'No campaigns found',
-        description: 'Try adjusting your filters or check back later',
-      ),
+    return const EmptyStateWidget(
+      icon: LucideIcons.search,
+      title: 'No campaigns found',
+      message: 'Try adjusting your filters or check back later',
     );
   }
 }
@@ -375,7 +374,7 @@ class _CampaignCard extends StatelessWidget {
           // Budget range (primary color)
           const SizedBox(height: 8),
           Text(
-            '\$${campaign.budgetMin.toInt()} - \$${campaign.budgetMax.toInt()}',
+            '${campaign.budgetMin.formatCurrency()} - ${campaign.budgetMax.formatCurrency()}',
             style: AppTypography.bodySmall.copyWith(
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
