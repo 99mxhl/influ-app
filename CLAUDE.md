@@ -122,6 +122,8 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION
 
 **Claude must ask permission before any git operation.**
 
+**FORBIDDEN TO PUSH DIRECTLY TO MAIN. Always create a feature branch and PR.**
+
 - Branches: `main` (prod), `feature/*`, `fix/*`, `hotfix/*`
 - Commits: `type(scope): description` — types: feat, fix, docs, refactor, test, chore
 - PRs: feature/* → main
