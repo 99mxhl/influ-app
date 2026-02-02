@@ -113,8 +113,12 @@ public class AuthService {
         refreshTokenRepository.revokeAllByUserId(user.getId());
     }
 
+    @Transactional(readOnly = true)
     public UserResponse getCurrentUser(User user) {
-        return userMapper.toUserResponse(user);
+        // Reload user to ensure all lazy collections are accessible within this transaction
+        User fullUser = userRepository.findByIdWithProfiles(user.getId())
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        return userMapper.toUserResponse(fullUser);
     }
 
     private AuthResponse generateAuthResponse(User user) {
