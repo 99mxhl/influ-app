@@ -90,6 +90,7 @@ flutter pub get
 flutter pub run build_runner build --delete-conflicting-outputs
 flutter run
 flutter test
+flutter analyze <changed_files>  # MUST run before committing any Flutter changes
 ```
 
 ## Key Patterns
