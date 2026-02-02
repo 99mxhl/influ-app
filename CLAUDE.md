@@ -160,10 +160,10 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION
 - One task per subagent for focused execution
 
 ### 3. Self-Improvement Loop
+- **SESSION START: IMMEDIATELY read `tasks/lessons.md` before doing anything else** - this is mandatory, not optional
 - After ANY correction from the user: update 'tasks/lessons.md' with the pattern
 - Write rules for yourself that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
 
 ### 4. Verification Before Done
 - Never mark a task complete without proving it works
