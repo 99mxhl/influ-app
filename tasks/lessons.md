@@ -26,3 +26,15 @@
   - "You're on branch X which is for Y. Should I create a new branch for this task?"
 - One PR = one concern. Don't mix unrelated changes.
 - Branch naming convention matters: `fix/backend-*` = backend only, `fix/mobile-*` = mobile only
+
+## 2026-02-02: Verify Flutter changes compile before committing
+
+**Mistake:** Used `LucideIcons.handshake` which doesn't exist in the package. Committed and pushed broken code that failed to compile.
+
+**Root cause:** Assumed icon name existed without verifying. Did not run compile check before committing.
+
+**Prevention:**
+- BEFORE committing Flutter changes, run `flutter analyze` or `flutter build apk --debug` to verify compilation
+- For icon/API usage, verify the member exists (grep in package source or check docs)
+- Never assume a symbol exists - always verify
+- Quick verification: `flutter analyze <changed_files>` catches most issues
