@@ -105,7 +105,7 @@ class DealStatusBadge extends StatelessWidget {
       case 'TERMS_ACCEPTED':
         return (BadgeStatus.primary, 'Terms Accepted');
       case 'ACTIVE':
-        return (BadgeStatus.primary, 'Active');
+        return (BadgeStatus.success, 'Active');
       case 'CONTENT_SUBMITTED':
         return (BadgeStatus.warning, 'Content Submitted');
       case 'COMPLETED':
