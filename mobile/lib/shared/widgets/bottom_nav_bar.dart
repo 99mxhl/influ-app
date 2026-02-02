@@ -39,8 +39,8 @@ class InfluBottomNavBar extends StatelessWidget {
       return [
         const NavItem(label: 'Home', icon: LucideIcons.home),
         const NavItem(label: 'Discover', icon: LucideIcons.compass),
+        const NavItem(label: 'Deals', icon: LucideIcons.briefcase),
         NavItem(label: 'Messages', icon: LucideIcons.messageSquare, badge: messageBadge),
-        const NavItem(label: 'Applications', icon: LucideIcons.briefcase),
         const NavItem(label: 'Profile', icon: LucideIcons.user),
       ];
     } else {

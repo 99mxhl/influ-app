@@ -114,7 +114,7 @@ class HomeScreen extends ConsumerWidget {
 
                     // Stats row
                     SizedBox(
-                      height: 120,
+                      height: 90,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: isInfluencer
@@ -123,14 +123,14 @@ class HomeScreen extends ConsumerWidget {
                                   context,
                                   label: 'Active Deals',
                                   value: '3',
-                                  icon: LucideIcons.fileText,
+                                  icon: LucideIcons.gift,
                                 ),
                                 AppSpacing.gapH3,
                                 _buildStatCard(
                                   context,
                                   label: 'Pending Payments',
                                   value: '\$2,450',
-                                  icon: LucideIcons.dollarSign,
+                                  icon: LucideIcons.circleDollarSign,
                                 ),
                                 AppSpacing.gapH3,
                                 _buildStatCard(
@@ -138,6 +138,7 @@ class HomeScreen extends ConsumerWidget {
                                   label: 'Avg Rating',
                                   value: '4.8',
                                   icon: LucideIcons.star,
+                                  iconColor: AppColors.warning,
                                 ),
                               ]
                             : [
@@ -199,9 +200,10 @@ class HomeScreen extends ConsumerWidget {
     required String label,
     required String value,
     required IconData icon,
+    Color? iconColor,
   }) {
     return Container(
-      width: 120,
+      width: 100,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.card,
@@ -226,15 +228,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.gray100,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(icon, size: 16, color: AppColors.gray600),
-              ),
+              Icon(icon, size: 16, color: iconColor ?? AppColors.gray600),
             ],
           ),
           const Spacer(),
@@ -338,9 +332,7 @@ class _ActionRequiredSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.card,
             borderRadius: AppRadius.card,
-            border: Border.all(
-              color: item.urgent ? AppColors.error : AppColors.gray200,
-            ),
+            border: Border.all(color: AppColors.gray200),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
