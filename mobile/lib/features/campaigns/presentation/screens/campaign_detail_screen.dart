@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/enums.dart';
+import '../../../../shared/widgets/platform_badge.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../../deals/providers/deals_provider.dart';
@@ -107,6 +108,12 @@ class _CampaignDetailScreenState extends ConsumerState<CampaignDetailScreen> {
                         color: AppColors.gray900,
                       ),
                     ),
+
+                    // Platform badges row
+                    if (campaign.platforms.isNotEmpty) ...[
+                      AppSpacing.gapV3,
+                      PlatformBadgeRow(platforms: campaign.platforms),
+                    ],
                     AppSpacing.gapV4,
 
                     // Quick info grid
