@@ -29,17 +29,18 @@ class ApiConstants {
   static String get baseUrl {
     // In release mode, require production URL
     if (kReleaseMode) {
-      if (_productionUrl == null || _productionUrl.isEmpty) {
+      final productionUrl = _productionUrl;
+      if (productionUrl == null || productionUrl.isEmpty) {
         throw StateError(
           'API_BASE_URL must be set for release builds. '
           'Use: flutter build --dart-define=API_BASE_URL=https://api.example.com',
         );
       }
       // Enforce HTTPS in production
-      if (!_productionUrl.startsWith('https://')) {
+      if (!productionUrl.startsWith('https://')) {
         throw StateError('API_BASE_URL must use HTTPS in production');
       }
-      return _productionUrl;
+      return productionUrl;
     }
 
     // Debug mode: use localhost
