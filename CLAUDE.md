@@ -124,6 +124,14 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION
 - **Before pushing:** Always check if there are new PR reviews to address. Fix all issues before pushing to avoid triggering multiple CI workflows.
 - **False positive reviews:** If reviewer flags issues that don't exist in actual code (e.g., claims missing dependency that exists, or N+1 query where JOIN FETCH is used), ignore them. Refactoring can happen later on main branch.
 
+## Bug Fixing Workflow
+
+When a bug is reported, don't start by trying to fix it. Instead:
+
+1. **Write a failing test** that reproduces the bug
+2. **Use subagents** to implement the fix and verify it passes the test
+3. **Confirm** the test now passes before committing
+
 ## Code Style
 
 ### Java
