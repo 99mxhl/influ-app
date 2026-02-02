@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -121,7 +122,15 @@ class HomeScreen extends ConsumerWidget {
                                   context,
                                   label: 'Active Deals',
                                   value: '3',
-                                  icon: LucideIcons.briefcase,
+                                  iconWidget: SvgPicture.asset(
+                                    'assets/icons/handshake.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: ColorFilter.mode(
+                                      AppColors.primary,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -208,7 +217,8 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context, {
     required String label,
     required String value,
-    required IconData icon,
+    IconData? icon,
+    Widget? iconWidget,
     Color? iconColor,
   }) {
     return Container(
@@ -237,7 +247,10 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(icon, size: 16, color: iconColor ?? AppColors.gray600),
+              if (iconWidget != null)
+                iconWidget
+              else if (icon != null)
+                Icon(icon, size: 16, color: iconColor ?? AppColors.gray600),
             ],
           ),
           const Spacer(),
