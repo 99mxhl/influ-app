@@ -12,9 +12,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.profile LEFT JOIN FETCH u.influencerProfile WHERE u.id = :id")
+    @Query("SELECT u FROM User u " +
+           "LEFT JOIN FETCH u.profile " +
+           "LEFT JOIN FETCH u.influencerProfile ip " +
+           "LEFT JOIN FETCH ip.categories " +
+           "WHERE u.id = :id")
     Optional<User> findByIdWithProfiles(UUID id);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.profile LEFT JOIN FETCH u.influencerProfile WHERE u.email = :email")
+    @Query("SELECT u FROM User u " +
+           "LEFT JOIN FETCH u.profile " +
+           "LEFT JOIN FETCH u.influencerProfile ip " +
+           "LEFT JOIN FETCH ip.categories " +
+           "WHERE u.email = :email")
     Optional<User> findByEmailWithProfiles(String email);
 }

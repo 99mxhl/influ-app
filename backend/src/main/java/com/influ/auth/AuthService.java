@@ -72,7 +72,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
         );
 
-        User user = userRepository.findByEmail(normalizedEmail)
+        User user = userRepository.findByEmailWithProfiles(normalizedEmail)
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
         return generateAuthResponse(user);
@@ -132,10 +132,14 @@ public class AuthService {
         );
         refreshTokenRepository.save(refreshToken);
 
+        // Reload user with all profiles and categories for response mapping
+        User fullUser = userRepository.findByIdWithProfiles(user.getId())
+                .orElse(user);
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
-                .user(userMapper.toUserResponse(user))
+                .user(userMapper.toUserResponse(fullUser))
                 .build();
     }
 }
