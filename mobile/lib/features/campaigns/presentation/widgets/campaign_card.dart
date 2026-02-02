@@ -30,8 +30,7 @@ class CampaignCard extends StatelessWidget {
               // Campaign name (bold, gray-900)
               Text(
                 campaign.title,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: AppTypography.body.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.gray900,
                 ),
@@ -43,8 +42,7 @@ class CampaignCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   campaign.clientName!,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppColors.gray500,
                   ),
                 ),
@@ -58,8 +56,7 @@ class CampaignCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 '${campaign.budgetMin.formatCurrency()} - ${campaign.budgetMax.formatCurrency()}',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: AppTypography.bodySmall.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
                 ),
@@ -69,8 +66,7 @@ class CampaignCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   campaign.description!,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppColors.gray600,
                   ),
                   maxLines: 2,

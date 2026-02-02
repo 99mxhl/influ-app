@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/theme/theme.dart';
-import '../../../../shared/models/enums.dart';
+import '../../../../shared/utils/extensions.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../../../campaigns/data/models/campaign.dart';
 import '../../../campaigns/providers/campaigns_provider.dart';
@@ -285,27 +285,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: AppSpacing.page,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🔍', style: TextStyle(fontSize: 64)),
-            AppSpacing.gapV4,
-            Text(
-              'No campaigns found',
-              style: AppTypography.h3.copyWith(color: AppColors.gray900),
-            ),
-            AppSpacing.gapV2,
-            Text(
-              'Try adjusting your filters or check back later',
-              style: AppTypography.body.copyWith(color: AppColors.gray600),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return const EmptyStateWidget(
+      icon: LucideIcons.search,
+      title: 'No campaigns found',
+      message: 'Try adjusting your filters or check back later',
     );
   }
 }
@@ -373,63 +356,36 @@ class _CampaignCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Campaign title
+          // Campaign title (bold, gray-900)
           Text(
             campaign.title,
             style: AppTypography.body.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
               color: AppColors.gray900,
             ),
           ),
 
-          const SizedBox(height: 12),
+          // Platform badges (4px gap)
+          if (campaign.platforms.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            PlatformBadgeRow(platforms: campaign.platforms),
+          ],
 
-          // Info row
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              // Budget
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.dollarSign, size: 16, color: AppColors.gray600),
-                  const SizedBox(width: 4),
-                  Text(
-                    '\$${campaign.budgetMin?.toInt() ?? 0} - \$${campaign.budgetMax?.toInt() ?? 0}',
-                    style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
-                  ),
-                ],
-              ),
+          // Budget range (primary color)
+          const SizedBox(height: 8),
+          Text(
+            '${campaign.budgetMin.formatCurrency()} - ${campaign.budgetMax.formatCurrency()}',
+            style: AppTypography.bodySmall.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
 
-              // Platforms
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: campaign.platforms.take(3).map((platform) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Icon(
-                      _getPlatformIcon(platform),
-                      size: 16,
-                      color: AppColors.gray600,
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              // Applicants
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.users, size: 16, color: AppColors.gray600),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${campaign.applicantCount ?? 0} applicants',
-                    style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
-                  ),
-                ],
-              ),
-            ],
+          // Applicants count
+          const SizedBox(height: 4),
+          Text(
+            '${campaign.applicantCount} applicants',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
           ),
 
           const SizedBox(height: 16),
@@ -457,15 +413,5 @@ class _CampaignCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  IconData _getPlatformIcon(Platform platform) {
-    return switch (platform) {
-      Platform.instagram => LucideIcons.instagram,
-      Platform.tiktok => LucideIcons.music2,
-      Platform.youtube => LucideIcons.youtube,
-      Platform.twitter => LucideIcons.twitter,
-      Platform.facebook => LucideIcons.facebook,
-    };
   }
 }
