@@ -5,6 +5,5 @@ public enum Platform {
     TIKTOK,
     YOUTUBE,
     TWITTER,
-    FACEBOOK,
-    LINKEDIN
+    FACEBOOK
 }

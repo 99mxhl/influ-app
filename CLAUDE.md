@@ -75,11 +75,15 @@ See OpenAPI docs at `/swagger-ui.html` when running locally.
 ## Commands
 
 ```bash
-# Backend
+# Backend (requires Java 21)
+# If using Homebrew OpenJDK, set JAVA_HOME first:
+export JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.10/libexec/openjdk.jdk/Contents/Home
+
 docker-compose up -d postgres
 ./gradlew flywayMigrate
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ./gradlew test
+./gradlew compileJava --quiet  # Quick validation of Java changes
 
 # Mobile
 flutter pub get
@@ -121,6 +125,7 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_REGION
 - Branches: `main` (prod), `feature/*`, `fix/*`, `hotfix/*`
 - Commits: `type(scope): description` — types: feat, fix, docs, refactor, test, chore
 - PRs: feature/* → main
+- **Merge commits:** Never use default "Merge pull request #X from ..." messages. Use descriptive messages following conventional commit format, e.g., `feat(mobile): add platform badges and colors`
 - **Before pushing:** Always check if there are new PR reviews to address. Fix all issues before pushing to avoid triggering multiple CI workflows.
 - **False positive reviews:** If reviewer flags issues that don't exist in actual code (e.g., claims missing dependency that exists, or N+1 query where JOIN FETCH is used), ignore them. Refactoring can happen later on main branch.
 
