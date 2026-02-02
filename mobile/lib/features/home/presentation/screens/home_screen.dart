@@ -113,57 +113,65 @@ class HomeScreen extends ConsumerWidget {
                     AppSpacing.gapV6,
 
                     // Stats row
-                    SizedBox(
-                      height: 90,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: isInfluencer
-                            ? [
-                                _buildStatCard(
+                    Row(
+                      children: isInfluencer
+                          ? [
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Active Deals',
                                   value: '3',
                                   icon: LucideIcons.gift,
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Pending Payments',
                                   value: '\$2,450',
                                   icon: LucideIcons.circleDollarSign,
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
-                                  label: 'Avg Rating',
+                                  label: 'Average Rating',
                                   value: '4.8',
                                   icon: LucideIcons.star,
                                   iconColor: AppColors.warning,
                                 ),
-                              ]
-                            : [
-                                _buildStatCard(
+                              ),
+                            ]
+                          : [
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Active Campaigns',
                                   value: '5',
                                   icon: LucideIcons.fileText,
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Pending Approvals',
                                   value: '8',
                                   icon: LucideIcons.clock,
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Total Spent',
                                   value: '\$12,500',
                                   icon: LucideIcons.dollarSign,
                                 ),
-                              ],
-                      ),
+                              ),
+                            ],
                     ),
                     AppSpacing.gapV6,
 
@@ -203,7 +211,7 @@ class HomeScreen extends ConsumerWidget {
     Color? iconColor,
   }) {
     return Container(
-      width: 100,
+      height: 90,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.card,

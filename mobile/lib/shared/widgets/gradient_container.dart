@@ -20,6 +20,7 @@ class GradientContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: padding ?? AppSpacing.p6,
       decoration: BoxDecoration(
         gradient: gradient ?? AppColors.gradientPrimary,
