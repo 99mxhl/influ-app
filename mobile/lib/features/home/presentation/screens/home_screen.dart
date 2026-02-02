@@ -263,13 +263,15 @@ class _ActionRequiredSection extends StatelessWidget {
         ? [
             _ActionItem(
               title: 'Content submission due',
-              description: 'Summer Fashion Campaign',
+              campaignName: 'Summer Fashion Campaign',
+              brandContact: 'FashionHub • Alex Thompson',
               dueDate: 'Due in 2 days',
               urgent: true,
             ),
             _ActionItem(
               title: 'New terms proposal',
-              description: 'TechCorp Spring Campaign',
+              campaignName: 'TechCorp Spring Campaign',
+              brandContact: 'TechCorp • Sarah Chen',
               dueDate: 'Pending review',
               urgent: false,
             ),
@@ -277,14 +279,16 @@ class _ActionRequiredSection extends StatelessWidget {
         : [
             _ActionItem(
               title: 'Review submitted content',
-              description: '3 deliverables awaiting approval',
+              campaignName: 'Summer Fashion Campaign',
+              brandContact: 'Sarah Johnson • 3 deliverables',
               dueDate: 'Submitted today',
               urgent: true,
             ),
             _ActionItem(
               title: 'New applications',
-              description: '12 influencers applied',
-              dueDate: 'Holiday Campaign',
+              campaignName: 'Holiday Campaign',
+              brandContact: '12 influencers applied',
+              dueDate: 'Review applications',
               urgent: false,
             ),
           ];
@@ -362,14 +366,21 @@ class _ActionRequiredSection extends StatelessWidget {
                         color: AppColors.gray900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2), // 2px gap below title
                     Text(
-                      item.description,
+                      item.campaignName,
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.gray600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2), // 2px gap below campaign name
+                    Text(
+                      item.brandContact,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.gray500,
+                      ),
+                    ),
+                    const SizedBox(height: 8), // 8px gap before due date
                     Text(
                       item.dueDate,
                       style: AppTypography.bodySmall.copyWith(
@@ -394,13 +405,15 @@ class _ActionRequiredSection extends StatelessWidget {
 
 class _ActionItem {
   final String title;
-  final String description;
+  final String campaignName;
+  final String brandContact;
   final String dueDate;
   final bool urgent;
 
   const _ActionItem({
     required this.title,
-    required this.description,
+    required this.campaignName,
+    required this.brandContact,
     required this.dueDate,
     required this.urgent,
   });
@@ -499,7 +512,7 @@ class _ActiveDealsSection extends StatelessWidget {
                       children: [
                         StatusBadge(
                           status: deal.status == 'Active'
-                              ? BadgeStatus.primary
+                              ? BadgeStatus.success
                               : BadgeStatus.warning,
                           label: deal.status,
                           size: BadgeSize.sm,
