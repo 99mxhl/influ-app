@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../models/enums.dart';
 
 /// Platform badge widget displaying a 24x24 circular badge
-/// with platform brand color background and white icon.
+/// with platform brand color background and white text abbreviation.
 class PlatformBadge extends StatelessWidget {
   final Platform platform;
   final double size;
@@ -30,34 +30,52 @@ class PlatformBadge extends StatelessWidget {
     }
   }
 
-  IconData get _icon {
+  /// Text abbreviation for the platform (more accurate than generic icons).
+  String get _abbreviation {
     switch (platform) {
       case Platform.instagram:
-        return Icons.camera_alt;
+        return 'IG';
       case Platform.youtube:
-        return Icons.play_arrow;
+        return 'YT';
       case Platform.twitter:
-        return Icons.close; // X icon
+        return 'X';
       case Platform.facebook:
-        return Icons.facebook;
+        return 'FB';
       case Platform.tiktok:
-        return Icons.music_note;
+        return 'TT';
     }
+  }
+
+  /// Whether this badge needs a border for visibility (black backgrounds).
+  bool get _needsBorder {
+    return platform == Platform.twitter || platform == Platform.tiktok;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: _backgroundColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        _icon,
-        color: Colors.white,
-        size: size * 0.6,
+    return Semantics(
+      label: platform.displayName,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: _backgroundColor,
+          shape: BoxShape.circle,
+          border: _needsBorder
+              ? Border.all(color: AppColors.gray300, width: 1)
+              : null,
+        ),
+        child: Center(
+          child: Text(
+            _abbreviation,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: size * 0.4,
+              fontWeight: FontWeight.bold,
+              height: 1,
+            ),
+          ),
+        ),
       ),
     );
   }
