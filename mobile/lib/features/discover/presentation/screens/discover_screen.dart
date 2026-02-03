@@ -87,28 +87,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     'Browse Campaigns',
                     style: AppTypography.h3.copyWith(color: AppColors.gray900),
                   ),
-                  // Notification bell with badge
-                  Stack(
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(LucideIcons.bell, color: AppColors.gray700),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            shape: BoxShape.circle,
-                          ),
+                  // Notification bell (placeholder - feature coming soon)
+                  IconButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Notifications coming soon'),
+                          duration: Duration(seconds: 2),
                         ),
-                      ),
-                    ],
+                      );
+                    },
+                    icon: Icon(LucideIcons.bell, color: AppColors.gray700),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
@@ -277,6 +268,8 @@ class _CampaignCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: AppColors.gray900,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       // Brand name (client display name)

@@ -90,7 +90,6 @@ class AppColors {
   static const Color instagram = Color(0xFFE1306C);
   static const Color youtube = Color(0xFFFF0000);
   static const Color xTwitter = Color(0xFF000000);
-  static const Color facebook = Color(0xFF1877F2);
   static const Color tiktok = Color(0xFF000000);
 
   // ============================================
