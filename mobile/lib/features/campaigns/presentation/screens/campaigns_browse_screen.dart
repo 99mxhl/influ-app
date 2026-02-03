@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/enums.dart';
 import '../../../../shared/widgets/widgets.dart';
 
 /// Campaign browse/discover screen matching Figma design 1:1
@@ -282,16 +283,16 @@ class _CampaignCard extends StatelessWidget {
     required this.onTap,
   });
 
-  Widget _getPlatformIcon(String platform) {
+  Widget _getPlatformIcon(Platform platform) {
     switch (platform) {
-      case 'instagram':
-        return Icon(LucideIcons.instagram, size: 16, color: AppColors.gray600);
-      case 'youtube':
-        return Icon(LucideIcons.youtube, size: 16, color: AppColors.gray600);
-      case 'tiktok':
-        return Icon(LucideIcons.music, size: 16, color: AppColors.gray600);
-      default:
-        return const SizedBox.shrink();
+      case Platform.instagram:
+        return const Icon(LucideIcons.instagram, size: 16, color: AppColors.gray600);
+      case Platform.youtube:
+        return const Icon(LucideIcons.youtube, size: 16, color: AppColors.gray600);
+      case Platform.tiktok:
+        return const Icon(LucideIcons.music, size: 16, color: AppColors.gray600);
+      case Platform.twitter:
+        return const Icon(LucideIcons.twitter, size: 16, color: AppColors.gray600);
     }
   }
 
@@ -369,7 +370,9 @@ class _CampaignCard extends StatelessWidget {
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
-                children: campaign.platforms.map(_getPlatformIcon).toList(),
+                children: (List<Platform>.from(campaign.platforms)..sort((a, b) => a.name.compareTo(b.name)))
+                    .map(_getPlatformIcon)
+                    .toList(),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,

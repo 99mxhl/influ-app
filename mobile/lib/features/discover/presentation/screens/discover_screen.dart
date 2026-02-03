@@ -368,7 +368,9 @@ class _CampaignCard extends StatelessWidget {
               Wrap(
                 spacing: 12,
                 runSpacing: 8,
-                children: campaign.platforms.map((platform) => _PlatformLabel(platform: platform)).toList(),
+                children: (List<Platform>.from(campaign.platforms)..sort((a, b) => a.name.compareTo(b.name)))
+                    .map((platform) => _PlatformLabel(platform: platform))
+                    .toList(),
               ),
             ],
 

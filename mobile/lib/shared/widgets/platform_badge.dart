@@ -90,10 +90,12 @@ class PlatformBadgeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sortedPlatforms = List<Platform>.from(platforms)
+      ..sort((a, b) => a.name.compareTo(b.name));
     return Wrap(
       spacing: 4,
       runSpacing: 4,
-      children: platforms
+      children: sortedPlatforms
           .map((platform) => PlatformBadge(
                 platform: platform,
                 size: badgeSize,
