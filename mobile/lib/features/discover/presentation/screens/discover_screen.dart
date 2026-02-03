@@ -248,7 +248,9 @@ class _CampaignCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      (campaign.clientName ?? 'B')[0].toUpperCase(),
+                      ((campaign.clientName?.trim().isEmpty ?? true)
+                          ? 'B'
+                          : campaign.clientName!)[0].toUpperCase(),
                       style: AppTypography.body.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
