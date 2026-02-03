@@ -53,25 +53,25 @@ class _CampaignDetailScreenState extends ConsumerState<CampaignDetailScreen> {
       _TimelineItem(
         title: 'Application Deadline',
         date: 'Feb 15, 2026',
-        color: Color(0xFF6366F1), // primary
+        color: AppColors.primary,
         icon: LucideIcons.calendar,
       ),
       _TimelineItem(
         title: 'Creator Selection',
         date: 'Feb 20, 2026',
-        color: Color(0xFFF59E0B), // warning
+        color: AppColors.warning,
         icon: LucideIcons.users,
       ),
       _TimelineItem(
         title: 'Content Creation Period',
         date: 'Feb 25 - Mar 10, 2026',
-        color: Color(0xFF10B981), // success
+        color: AppColors.success,
         icon: LucideIcons.penTool,
       ),
       _TimelineItem(
         title: 'Posting Schedule',
         date: 'Mar 11 - Mar 15, 2026',
-        color: Color(0xFF0EA5E9), // secondary
+        color: AppColors.secondary,
         icon: LucideIcons.send,
       ),
     ],
@@ -1211,10 +1211,24 @@ class _ApplyModalState extends State<_ApplyModal> {
   }
 
   Future<void> _handleSubmit() async {
-    setState(() => _isSubmitting = true);
-
     final rateText = _rateController.text.trim();
     final rate = rateText.isNotEmpty ? double.tryParse(rateText) : null;
+
+    // Validate rate if provided
+    if (rateText.isNotEmpty && rate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid number for the rate')),
+      );
+      return;
+    }
+    if (rate != null && rate <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rate must be greater than zero')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
     final message = _messageController.text.trim();
 
     await widget.onSubmit(rate, message);
