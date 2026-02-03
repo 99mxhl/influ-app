@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -113,56 +114,74 @@ class HomeScreen extends ConsumerWidget {
                     AppSpacing.gapV6,
 
                     // Stats row
-                    SizedBox(
-                      height: 120,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: isInfluencer
-                            ? [
-                                _buildStatCard(
+                    Row(
+                      children: isInfluencer
+                          ? [
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Active Deals',
                                   value: '3',
-                                  icon: LucideIcons.fileText,
+                                  iconWidget: SvgPicture.asset(
+                                    'assets/icons/handshake.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: ColorFilter.mode(
+                                      AppColors.primary,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Pending Payments',
                                   value: '\$2,450',
                                   icon: LucideIcons.dollarSign,
+                                  iconColor: AppColors.success,
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
-                                  label: 'Avg Rating',
+                                  label: 'Average Rating',
                                   value: '4.8',
                                   icon: LucideIcons.star,
+                                  iconColor: AppColors.warning,
                                 ),
-                              ]
-                            : [
-                                _buildStatCard(
+                              ),
+                            ]
+                          : [
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Active Campaigns',
                                   value: '5',
                                   icon: LucideIcons.fileText,
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Pending Approvals',
                                   value: '8',
                                   icon: LucideIcons.clock,
                                 ),
-                                AppSpacing.gapH3,
-                                _buildStatCard(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatCard(
                                   context,
                                   label: 'Total Spent',
                                   value: '\$12,500',
                                   icon: LucideIcons.dollarSign,
                                 ),
-                              ],
-                      ),
+                              ),
+                            ],
                     ),
                     AppSpacing.gapV6,
 
@@ -198,10 +217,12 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context, {
     required String label,
     required String value,
-    required IconData icon,
+    IconData? icon,
+    Widget? iconWidget,
+    Color? iconColor,
   }) {
     return Container(
-      width: 120,
+      height: 90,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.card,
@@ -226,15 +247,10 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.gray100,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(icon, size: 16, color: AppColors.gray600),
-              ),
+              if (iconWidget != null)
+                iconWidget
+              else if (icon != null)
+                Icon(icon, size: 16, color: iconColor ?? AppColors.gray600),
             ],
           ),
           const Spacer(),
@@ -338,9 +354,7 @@ class _ActionRequiredSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.card,
             borderRadius: AppRadius.card,
-            border: Border.all(
-              color: item.urgent ? AppColors.error : AppColors.gray200,
-            ),
+            border: Border.all(color: AppColors.gray200),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
