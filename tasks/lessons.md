@@ -48,3 +48,16 @@
 - Or use GitHub's "Delete branch" button after merge
 - Also delete local tracking branches: `git branch -d <branch-name>` and `git remote prune origin`
 - Periodically clean up with: `git fetch --prune` to remove stale remote-tracking references
+
+## 2026-02-03: Do not add unrequested UI elements
+
+**Mistake:** When asked to "redesign Platforms to be vertically aligned with Budget", I added a globe icon that was never requested. User had to correct me.
+
+**Root cause:** Over-interpreted the request. Assumed that matching the Budget layout meant adding an icon like Budget has.
+
+**Prevention:**
+- Only implement exactly what is requested - nothing more
+- If a design change seems to require adding new elements, ASK first: "Should I add an icon to match the Budget card layout?"
+- "Align" or "match" means adjust positioning/spacing, not add new elements
+- When in doubt, do the minimal change and let the user request more if needed
+- Don't assume what the user wants - ask for clarification instead of guessing
