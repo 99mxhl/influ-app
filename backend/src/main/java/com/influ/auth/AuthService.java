@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.hibernate.Hibernate;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
@@ -118,6 +120,13 @@ public class AuthService {
         // Reload user to ensure all lazy collections are accessible within this transaction
         User fullUser = userRepository.findByIdWithProfiles(user.getId())
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
+
+        // Explicitly initialize the categories collection to avoid LazyInitializationException
+        // This is needed because the User from security context may be in the persistence cache
+        if (fullUser.getInfluencerProfile() != null) {
+            Hibernate.initialize(fullUser.getInfluencerProfile().getCategories());
+        }
+
         return userMapper.toUserResponse(fullUser);
     }
 
@@ -135,6 +144,11 @@ public class AuthService {
         // Reload user with all profiles and categories for response mapping
         User fullUser = userRepository.findByIdWithProfiles(user.getId())
                 .orElse(user);
+
+        // Explicitly initialize the categories collection to avoid LazyInitializationException
+        if (fullUser.getInfluencerProfile() != null) {
+            Hibernate.initialize(fullUser.getInfluencerProfile().getCategories());
+        }
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
