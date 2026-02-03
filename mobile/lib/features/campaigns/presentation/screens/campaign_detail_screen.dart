@@ -429,7 +429,7 @@ class _CampaignDetailScreenState extends ConsumerState<CampaignDetailScreen> {
                   borderRadius: AppRadius.radiusFull,
                 ),
                 child: Text(
-                  cat[0].toUpperCase() + cat.substring(1).toLowerCase(),
+                  cat.isEmpty ? cat : cat[0].toUpperCase() + cat.substring(1).toLowerCase(),
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.gray700,
                   ),
@@ -1224,6 +1224,12 @@ class _ApplyModalState extends State<_ApplyModal> {
     if (rate != null && rate <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Rate must be greater than zero')),
+      );
+      return;
+    }
+    if (rate != null && (rate < widget.budgetMin || rate > widget.budgetMax)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Rate should be between \$${widget.budgetMin.toStringAsFixed(0)} and \$${widget.budgetMax.toStringAsFixed(0)}')),
       );
       return;
     }
