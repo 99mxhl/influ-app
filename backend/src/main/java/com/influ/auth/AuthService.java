@@ -72,7 +72,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
         );
 
-        User user = userRepository.findByEmail(normalizedEmail)
+        User user = userRepository.findByEmailWithProfiles(normalizedEmail)
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
         return generateAuthResponse(user);
@@ -113,8 +113,12 @@ public class AuthService {
         refreshTokenRepository.revokeAllByUserId(user.getId());
     }
 
+    @Transactional(readOnly = true)
     public UserResponse getCurrentUser(User user) {
-        return userMapper.toUserResponse(user);
+        // Reload user to ensure all lazy collections are accessible within this transaction
+        User fullUser = userRepository.findByIdWithProfiles(user.getId())
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        return userMapper.toUserResponse(fullUser);
     }
 
     private AuthResponse generateAuthResponse(User user) {
@@ -128,10 +132,14 @@ public class AuthService {
         );
         refreshTokenRepository.save(refreshToken);
 
+        // Reload user with all profiles and categories for response mapping
+        User fullUser = userRepository.findByIdWithProfiles(user.getId())
+                .orElse(user);
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
-                .user(userMapper.toUserResponse(user))
+                .user(userMapper.toUserResponse(fullUser))
                 .build();
     }
 }
