@@ -23,8 +23,6 @@ class PlatformBadge extends StatelessWidget {
         return AppColors.youtube;
       case Platform.twitter:
         return AppColors.xTwitter;
-      case Platform.facebook:
-        return AppColors.facebook;
       case Platform.tiktok:
         return AppColors.tiktok;
     }
@@ -39,8 +37,6 @@ class PlatformBadge extends StatelessWidget {
         return 'YT';
       case Platform.twitter:
         return 'X';
-      case Platform.facebook:
-        return 'FB';
       case Platform.tiktok:
         return 'TT';
     }
