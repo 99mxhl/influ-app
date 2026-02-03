@@ -52,9 +52,7 @@ enum Platform {
   @JsonValue('YOUTUBE')
   youtube('YOUTUBE'),
   @JsonValue('TWITTER')
-  twitter('TWITTER'),
-  @JsonValue('FACEBOOK')
-  facebook('FACEBOOK');
+  twitter('TWITTER');
 
   final String value;
   const Platform(this.value);
@@ -69,8 +67,6 @@ enum Platform {
         return 'YouTube';
       case Platform.twitter:
         return 'X';
-      case Platform.facebook:
-        return 'Facebook';
     }
   }
 }

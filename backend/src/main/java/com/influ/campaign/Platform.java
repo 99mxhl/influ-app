@@ -4,6 +4,5 @@ public enum Platform {
     INSTAGRAM,
     TIKTOK,
     YOUTUBE,
-    TWITTER,
-    FACEBOOK
+    TWITTER
 }

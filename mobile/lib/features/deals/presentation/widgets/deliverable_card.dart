@@ -325,7 +325,6 @@ class _DeliverableCardState extends ConsumerState<DeliverableCard> {
       Platform.tiktok => LucideIcons.music2,
       Platform.youtube => LucideIcons.youtube,
       Platform.twitter => LucideIcons.twitter,
-      Platform.facebook => LucideIcons.facebook,
     };
   }
 }

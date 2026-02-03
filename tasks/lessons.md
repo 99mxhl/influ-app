@@ -38,3 +38,13 @@
 - For icon/API usage, verify the member exists (grep in package source or check docs)
 - Never assume a symbol exists - always verify
 - Quick verification: `flutter analyze <changed_files>` catches most issues
+
+## 2026-02-03: Delete remote branches after PR merge
+
+**Mistake:** Left stale branches on origin after PRs were merged, cluttering the repository.
+
+**Prevention:**
+- After a PR is merged, delete the remote branch: `git push origin --delete <branch-name>`
+- Or use GitHub's "Delete branch" button after merge
+- Also delete local tracking branches: `git branch -d <branch-name>` and `git remote prune origin`
+- Periodically clean up with: `git fetch --prune` to remove stale remote-tracking references
